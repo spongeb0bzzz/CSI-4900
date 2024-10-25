@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+        .container {
+            text-align: center;
+            width: 430px;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            resize: none;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Email Phishing Detector</h2>
+    <textarea id="emailContent" placeholder="Paste email content here..."></textarea>
+    <button onclick="submitEmail()">Analyze</button>
+    <div id="result"></div>
+</div>
+
+<script>
+    async function submitEmail() {
+        const emailContent = document.getElementById("emailContent").value;
+
+        // Clear previous result
+        document.getElementById("result").innerText = "Analyzing...";
+
+        // Send email content to the backend
+        const response = await fetch('/analyze_email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email_content: emailContent })
+        });
+
+        const result = await response.json();
+
+        // Display the result
+        document.getElementById("result").innerText = "Result: " + result.result;
+    }
+</script>
+</body>
+</html>
