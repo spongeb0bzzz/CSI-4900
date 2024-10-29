@@ -64,7 +64,7 @@
         document.getElementById("result").innerText = "Analyzing...";
 
         // Send email content to the backend
-        const response = await fetch('/analyze_email', {
+        const response = await fetch('http://127.0.0.1:5000/analyze_email', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
