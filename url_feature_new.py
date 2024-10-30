@@ -110,31 +110,58 @@ def IsHTTPS(url):
 def NoOfURLRedirect(url):
     return url.count('//') - 1
 
+# 20. Char Countinuation RAte
+def CharContinuationRate(url):
+    # Find all sequences of alphabets, digits, and special characters
+    alpha_sequences = re.findall(r'[A-Za-z]+', url)
+    digit_sequences = re.findall(r'[0-9]+', url)
+    special_sequences = re.findall(r'[^A-Za-z0-9]+', url)
+    # print(alpha_sequences)
+    # print(digit_sequences)
+    # print(special_sequences)
+    # Find the longest sequence in each category
+    longest_alpha = max(len(seq) for seq in alpha_sequences) if alpha_sequences else 0
+    longest_digit = max(len(seq) for seq in digit_sequences) if digit_sequences else 0
+    longest_special = max(len(seq) for seq in special_sequences) if special_sequences else 0
+    
+    # Sum the lengths of the longest sequences
+    total_length_longest_sequences = longest_alpha + longest_digit + longest_special
+    # print(total_length_longest_sequences)
+    # Calculate the CharContinuationRate
+    url_length = len(url)
+    char_continuation_rate = total_length_longest_sequences / url_length if url_length > 0 else 0
+    
+    return char_continuation_rate
 
-# url ="https://www.voicefmradio.co.uk"
 
-features = {
-    "URLLength": URLLength(url),
-    "DomainLength": DomainLength(url),
-    "IsDomainIP": IsDomainIP(url),
-    "TLDLength": TLDLength(url),
-    "NoOfSubDomain": NoOfSubDomain(url),
-    "HasObfuscation": HasObfuscation(url),
-    "NoOfObfuscatedChar": NoOfObfuscatedChar(url),
-    "ObfuscationRatio": ObfuscationRatio(url),
-    "NoOfLettersInURL": NoOfLettersInURL(url),
-    "LetterRatioInURL": LetterRatioInURL(url),
-    "NoOfDegitsInURL": NoOfDegitsInURL(url),
-    "DegitRatioInURL": DegitRatioInURL(url),
-    "NoOfEqualsInURL": NoOfEqualsInURL(url),
-    "NoOfQMarkInURL": NoOfQMarkInURL(url),
-    "NoOfAmpersandInURL": NoOfAmpersandInURL(url),
-    "NoOfOtherSpecialCharsInURL": NoOfOtherSpecialCharsInURL(url),
-    "SpacialCharRatioInURL": SpacialCharRatioInURL(url),
-    "IsHTTPS": IsHTTPS(url),
-    "NoOfURLRedirect": NoOfURLRedirect(url)
-}
+url ="https://www.good-package.com"
+
+def get_url_features(url):
+    features = {
+        "URLLength": URLLength(url),
+        "DomainLength": DomainLength(url),
+        "IsDomainIP": IsDomainIP(url),
+        "TLDLength": TLDLength(url),
+        "NoOfSubDomain": NoOfSubDomain(url),
+        # "HasObfuscation": HasObfuscation(url),
+        # "NoOfObfuscatedChar": NoOfObfuscatedChar(url),
+        # "ObfuscationRatio": ObfuscationRatio(url),
+        # "NoOfLettersInURL": NoOfLettersInURL(url),
+        # "LetterRatioInURL": LetterRatioInURL(url),
+        "NoOfDigitsInURL": NoOfDegitsInURL(url),
+        "DigitRatioInURL": DegitRatioInURL(url),
+        "NoOfEqualsInURL": NoOfEqualsInURL(url),
+        "NoOfQMarkInURL": NoOfQMarkInURL(url),
+        "NoOfAmpersandInURL": NoOfAmpersandInURL(url),
+        # "NoOfOtherSpecialCharsInURL": NoOfOtherSpecialCharsInURL(url),
+        # "SpecialCharRatioInURL": SpacialCharRatioInURL(url),
+        "IsHTTPS": IsHTTPS(url),
+        # "NoOfURLRedirect": NoOfURLRedirect(url)，
+        "CharContinuationRate": CharContinuationRate(url)
+    }
+    return features
 
 # Print features
 # for feature_name, value in features.items():
 #     print(f"{feature_name}: {value}")
+print(get_url_features(url))
