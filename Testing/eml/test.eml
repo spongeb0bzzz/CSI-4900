@@ -1,0 +1,89 @@
+Delivered-To: thenaster01@gmail.com
+Received: by 2002:a17:906:d925:b0:a99:df11:3abd with SMTP id rn5csp671351ejb;
+        Tue, 29 Oct 2024 16:59:27 -0700 (PDT)
+X-Received: by 2002:a05:600c:3b14:b0:426:8884:2c58 with SMTP id 5b1f17b1804b1-4319ac6fb0amr108154665e9.4.1730246367504;
+        Tue, 29 Oct 2024 16:59:27 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1730246367; cv=none;
+        d=google.com; s=arc-20240605;
+        b=DVqtF8x7Vb/CokekS1Aj6bibG6Y8d0eemSJjBLPKvR5tnOtcBoPi6d1xpTF9PizBoQ
+         Q1mhpfgDOR/eBOWrOZLAcZG4eLEUmMsjWxjjlTxFRPDcWdy/Vrhe7+Mvpi1Q/LMegqti
+         MqCen2/sTuvwxzCbZQl15X7Jimj5AdXO38iX5SY4HCSa/awx9NnawAD4ltX4w9D1FDA+
+         TnXvRi/XStj+6o7DfjaGYn4ZOgbvF9LKgF17KrmmwDZ8B9N0C/vNIlwARbLsFIQo/J6W
+         9UrHWJCWa3ykttY1uPNKcKnMgi95kCV+ehCVVPG9M7qmEkI1CZLANV4sOETImTtG3ipQ
+         whQw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=to:subject:message-id:date:from:mime-version:dkim-signature;
+        bh=O8ZdBZ58jW3ohaazlvohPhkHAJyxreel2ZAhxr7xadQ=;
+        fh=mxzgJWYj+tPQa7pTq1FZQvYWVQEHlwrw5QugJMME5Z4=;
+        b=PVb23rJmgWb5Z4oFVU5ya69wbgBCmJZ7O2DKzS7KfSD3Uf+Lh8sYmD46mvXd1EjW/7
+         vHJXQ1Vm0T45T809EAfgTF07O4N68nw9jbVws2+ZPKajkVIhnvRWlPzJSL00sorr5iDc
+         sx9F7TpLwftKKSZZ66x4Yc+IbdYDoDjpSXxqYXEpyjUOskR3hYoes7PO0r5CaUN3vHdv
+         tluLndT3Kq8Sb8ippz+n7y9C5XukVDxdMa//hPaW+Fh0I3L7o7gSF2risiNyUXA/+S9f
+         wJu4iTVxqj2kqrwE42PtCr001+fO34ac6RQb6nxbPgqIb2dWOE/bLfwVRVGPpDNstAB5
+         Itxw==;
+        dara=google.com
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@gmail.com header.s=20230601 header.b=VrMwXBoc;
+       spf=pass (google.com: domain of nassim.tiraoui@gmail.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=nassim.tiraoui@gmail.com;
+       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com;
+       dara=pass header.i=@gmail.com
+Return-Path: <nassim.tiraoui@gmail.com>
+Received: from mail-sor-f41.google.com (mail-sor-f41.google.com. [209.85.220.41])
+        by mx.google.com with SMTPS id 5b1f17b1804b1-4319397d1fasor44916555e9.11.2024.10.29.16.59.27
+        for <thenaster01@gmail.com>
+        (Google Transport Security);
+        Tue, 29 Oct 2024 16:59:27 -0700 (PDT)
+Received-SPF: pass (google.com: domain of nassim.tiraoui@gmail.com designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@gmail.com header.s=20230601 header.b=VrMwXBoc;
+       spf=pass (google.com: domain of nassim.tiraoui@gmail.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=nassim.tiraoui@gmail.com;
+       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com;
+       dara=pass header.i=@gmail.com
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1730246367; x=1730851167; dara=google.com;
+        h=to:subject:message-id:date:from:mime-version:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=O8ZdBZ58jW3ohaazlvohPhkHAJyxreel2ZAhxr7xadQ=;
+        b=VrMwXBocskcl/6NFRT/jHiP3T1aSMB3WGA5IUvdH/00tJuniS9xC76uQMb4u6U1mT9
+         H6AuIti8EyqSheq/Z7N1aYlhvs7E0RElNU/yNmMZiXDbHjFNvfdo+1z64lA0T08pSqdf
+         A94UwdRcGAArDAw521Z6Hvsfy2urkU/goSvGU4IJdnCgCPj4g7Jzr7k8oXLXuUsnBSvv
+         7CoH3ScYSJbNPYVX7J0XGHndrR/dsQwZ21MtxPgMNq+3eiUpDNzcD2hfvG9TkOJnUCep
+         0nvIc1zXkC4JvFAlBYYc4EnBMJG6sYVqlfAv28HGlv5vVKgQ/TNqiam1Jc2lXnSNbT44
+         IBdA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1730246367; x=1730851167;
+        h=to:subject:message-id:date:from:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=O8ZdBZ58jW3ohaazlvohPhkHAJyxreel2ZAhxr7xadQ=;
+        b=pqP9X5xjnNljjf0hRnOBej97f7NmCUg1cmKRbuTZBnNQO3kob9MIqfWdUhbm1U5EHE
+         F7k+Wi+zuL82n5Vp7nRoCr8k7VVs/ZmjNL0DepIZLBSD0GnOwxb17ZSHs0b7we4QUq+S
+         +oMWm5i8mxbbNQ+jTKo/ljBTlzwwIaY9AHAHp3T89wuMCKAoC4bw7Au+NPXmbMWmxKfY
+         C3iiGjmzPKuC5KmBSrmaaRIfSHRmfNG+UT4JlVs5FGfcUBzAn3gpC6vjz30A+KqA25tN
+         rIQcolQvEqHZvtohVNb8pcG24No0sl+y83oJnynGb/UJRZRoyfcxF3hJThQQHKYdR1L8
+         A+fg==
+X-Gm-Message-State: AOJu0Yzwpe6YEIteKgAXzFFbU3u3rF+kHk04vbR3kGaNYS6+OwxaPPOu
+	ot3w1/uYPXhb6OuGG3U/aO22gZ1LpQONXjfmRAnIWiVkA3xh6SsI3M9EPn9SIV4EX2sQXwgajLl
+	1CObd0yHq3qj+Tgdo7L1Piwhl30vhvA==
+X-Google-Smtp-Source: AGHT+IECtvtU9iOle+fyoxY3YE3F8ioav17PcuwoRVoI2QGdbynOYmX0LL3YLbZFRkVueKsWV14qiaVRP2HkEehm3N4=
+X-Received: by 2002:a05:600c:4e0f:b0:431:12d0:746b with SMTP id
+ 5b1f17b1804b1-4319ad294a4mr102044955e9.35.1730246366711; Tue, 29 Oct 2024
+ 16:59:26 -0700 (PDT)
+MIME-Version: 1.0
+From: "Nassim T." <nassim.tiraoui@gmail.com>
+Date: Tue, 29 Oct 2024 19:59:14 -0400
+Message-ID: <CAN4kxuPGQ98F-b12Jf3x5DAK6HMLJ+6jjnRqy_3F=LXB=2agHg@mail.gmail.com>
+Subject: hello
+To: thenaster01@gmail.com
+Content-Type: multipart/alternative; boundary="0000000000000fd8e20625a660cd"
+
+--0000000000000fd8e20625a660cd
+Content-Type: text/plain; charset="UTF-8"
+
+test
+
+--0000000000000fd8e20625a660cd
+Content-Type: text/html; charset="UTF-8"
+
+<div dir="ltr">test</div>
+
+--0000000000000fd8e20625a660cd--
