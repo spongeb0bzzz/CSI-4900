@@ -46,12 +46,31 @@
             resize: none;
             box-sizing: border-box;
         }
+        h5{
+            text-align: left;
+        }
+        .file-input {
+            width: 100%;
+            margin-top: 10px;
+            text-align: left;
+        }
+        .file-input input {
+            width: auto;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h2>Email Phishing Detector</h2>
     <textarea id="emailContent" placeholder="Paste email content here..."></textarea>
+    <br>
+    <div class="file-input">
+        <label for="emailFile">Upload .eml file:</label>
+        <input type="file" id="emailFile" accept=".eml">
+    </div>
+    <br>
+    
+
     <button onclick="submitEmail()">Analyze</button>
     <div id="result"></div>
 </div>
@@ -59,23 +78,56 @@
 <script>
     async function submitEmail() {
         const emailContent = document.getElementById("emailContent").value;
+        const emailFile = document.getElementById("emailFile").files[0];
 
         // Clear previous result
         document.getElementById("result").innerText = "Analyzing...";
 
-        // Send email content to the backend
-        const response = await fetch('http://127.0.0.1:5000/analyze_email', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email_content: emailContent })
-        });
+        let requestBody = {};
 
-        const result = await response.json();
+        if (emailFile) {
+            // Read the .eml file content as text
+            const fileReader = new FileReader();
+            fileReader.onload = async function(event) {
+                const fileContent = event.target.result;
+                requestBody.email_content = fileContent;
 
-        // Display the result
-        document.getElementById("result").innerText = "Result: " + result.result;
+                await sendRequest(requestBody);
+            };
+            fileReader.readAsText(emailFile);
+        } else if (emailContent) {
+            // Use the content from the textarea
+            requestBody.email_content = emailContent;
+            await sendRequest(requestBody);
+        } else {
+            document.getElementById("result").innerText = "Please provide email content or upload a .eml file.";
+        }
+    }
+
+    async function sendRequest(requestBody) {
+        try {
+            // Send email content to the backend
+            const response = await fetch('http://127.0.0.1:5000/analyze_email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const result = await response.json();
+
+            // Display the result correctly
+            document.getElementById("result").innerText = 
+                `Result: ${result.Prediction}, Accuracy: ${result.Model_Accuracy}`;
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById("result").innerText = 'Error occurred while analyzing the email';
+        }
     }
 </script>
 </body>
