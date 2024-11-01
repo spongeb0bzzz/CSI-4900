@@ -22,24 +22,30 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 @app.route('/analyze_email', methods=['POST'])
 def analyze_email():
+    logging.info(f'Request files: {request.files}')
     # Check if a file is included in the request
     if 'eml_file' in request.files:
+        logging.info(f'Working with eml file')
         file = request.files['eml_file']
         if file.filename == '':
             return jsonify({"error": "No file selected"}), 400
-
+        # Read and decode content from the file directly
+        raw_content = file.read()
+        email_content = raw_content.decode('utf-8', errors='replace') if isinstance(raw_content, bytes) else raw_content
         # Extract content from the uploaded .eml file
-        email_content = extract_eml(file)
-        email_body = email_content.get("body", "")
+        email_content = extract_eml(email_content)
+        logging.info(f'Email content: {email_content}')
+        email_body = email_content.get("body_plain", "")
         
         # Log the extracted email body
         logging.info(f'Extracted Email Body: {email_body}')
         
     else:
+        logging.info(f'Working with pasting content')
         # Get the email content from JSON
         email_content = request.json.get("email_content")
         email_content = email_content.lstrip()
-        logging.info(f'Content:{email_content}')
+        # logging.info(f'Content:{email_content}')
         if not email_content:
             return jsonify({"error": "No email content provided"}), 400
 

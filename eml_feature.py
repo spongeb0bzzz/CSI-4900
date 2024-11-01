@@ -1,5 +1,6 @@
 import re
 from email import message_from_file
+from email import message_from_string
 from email.utils import parsedate_to_datetime
 from bs4 import BeautifulSoup
 
@@ -14,7 +15,7 @@ def extract_eml(file):
         dict: A dictionary containing the extracted fields.
     """
   
-    msg = message_from_file(file)
+    msg = message_from_string(file)
 
     # Extract fields
     from_email = msg.get("From")
@@ -38,8 +39,11 @@ def extract_eml(file):
     if msg.is_multipart():
         for part in msg.walk():
             content_type = part.get_content_type()
-            if content_type == "text/plain" or content_type == "text/html":
-                body_content = part.get_payload(decode=True).decode(part.get_content_charset(), errors="replace")
+            if content_type in ["text/plain", "text/html"]:
+                charset = part.get_content_charset() or 'utf-8'  # Fallback to 'utf-8' if charset is None
+                body_content = part.get_payload(decode=True)
+                if body_content is not None:
+                    body_content = body_content.decode(charset, errors="replace")
                 # Parse HTML and keep URLs and content within tags
                 soup = BeautifulSoup(body_content, "html.parser")
                 
@@ -54,8 +58,10 @@ def extract_eml(file):
                 body_plain = soup.get_text(separator=" ")  # Extract text with single-space separator
                 break  # Stop at the first text-based part
     else:
-        body_content = msg.get_payload(decode=True).decode(msg.get_content_charset(), errors="replace")
-        soup = BeautifulSoup(body_content, "html.parser")
+        charset = msg.get_content_charset() or 'utf-8'
+        body_content = msg.get_payload(decode=True)
+        if body_content is not None:
+            body_content = body_content.decode(charset, errors="replace")
         
         # Remove all script and style tags
         for script_or_style in soup(["script", "style"]):
