@@ -79,7 +79,13 @@ def extract_eml(file):
     body_plain = re.sub(r'\s+', ' ', body_plain).strip()
 
     # Optional: parse date to datetime
-    parsed_date = parsedate_to_datetime(date) if date else None
+    if date:
+        try:
+            parsed_date = parsedate_to_datetime(date)
+        except (TypeError, ValueError) as e:
+            parsed_date = None  # Assign a fallback if parsing fails
+    else:
+        parsed_date = None
 
     return {
         "from_email": from_email,
