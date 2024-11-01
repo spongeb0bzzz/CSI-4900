@@ -83,25 +83,61 @@
         // Clear previous result
         document.getElementById("result").innerText = "Analyzing...";
 
-        let requestBody = {};
-
         if (emailFile) {
-            // Read the .eml file content as text
-            const fileReader = new FileReader();
-            fileReader.onload = async function(event) {
-                const fileContent = event.target.result;
-                requestBody.email_content = fileContent;
+        // Use FormData to send the file as 'multipart/form-data'
+        const formData = new FormData();
+        formData.append('eml_file', emailFile);
 
-                await sendRequest(requestBody);
-            };
-            fileReader.readAsText(emailFile);
-        } else if (emailContent) {
-            // Use the content from the textarea
-            requestBody.email_content = emailContent;
-            await sendRequest(requestBody);
-        } else {
-            document.getElementById("result").innerText = "Please provide email content or upload a .eml file.";
+        try {
+            // Send the .eml file to the backend
+            const response = await fetch('http://127.0.0.1:5000/analyze_email', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const result = await response.json();
+
+            // Display the result correctly
+            document.getElementById("result").innerText = 
+                `Result: ${result.Prediction}, Accuracy: ${result.Model_Accuracy}`;
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById("result").innerText = 'Error occurred while analyzing the email';
         }
+    } else if (emailContent) {
+        // Use JSON for pasting content
+        const requestBody = { email_content: emailContent };
+
+        try {
+            // Send the email content as JSON to the backend
+            const response = await fetch('http://127.0.0.1:5000/analyze_email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const result = await response.json();
+
+            // Display the result correctly
+            document.getElementById("result").innerText = 
+                `Result: ${result.Prediction}, Accuracy: ${result.Model_Accuracy}`;
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById("result").innerText = 'Error occurred while analyzing the email';
+        }
+    } else {
+        document.getElementById("result").innerText = "Please provide email content or upload a .eml file.";
+    }
     }
 
     async function sendRequest(requestBody) {
