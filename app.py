@@ -10,10 +10,10 @@ CORS(app)
 
 # Load models
 # model = joblib.load('model/new email models/stacking_model.joblib')
-model = joblib.load('CSI-4900\\model\\new email models\\stacking_model.joblib')
+model = joblib.load('model\\new email models\\stacking_model.joblib')
 # vectorizer = joblib.load('model/new email models/vectorizer.joblib')
-vectorizer = joblib.load('CSI-4900\\model\\new email models\\vectorizer.joblib')
-scaler = joblib.load('CSI-4900\\model\\new email models\\scaler_model.joblib')
+vectorizer = joblib.load('model\\new email models\\vectorizer.joblib')
+scaler = joblib.load('model\\new email models\\scaler_model.joblib')
 # scaler = joblib.load('model/new email models/scaler_model.joblib')
 import logging
 
