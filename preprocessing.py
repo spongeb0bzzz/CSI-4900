@@ -20,11 +20,12 @@ def extract_email_info(raw_email):
     # Get sender IP from Received headers
     received_headers = msg.get_all("Received")
     sender_ip = None
-    for header in received_headers:
-        ip_match = re.search(r'\[(\d{1,3}(?:\.\d{1,3}){3})\]', header)
-        if ip_match:
-            sender_ip = ip_match.group(1)
-            break  # Use the first matched IP as the originating IP
+    if received_headers:
+        for header in received_headers:
+            ip_match = re.search(r'\[(\d{1,3}(?:\.\d{1,3}){3})\]', header)
+            if ip_match:
+                sender_ip = ip_match.group(1)
+                break  # Use the first matched IP as the originating IP
     email_info["sender_ip"] = sender_ip
 
     # Extract and clean body (plain text, retaining URLs and clickable text)
@@ -33,7 +34,8 @@ def extract_email_info(raw_email):
         for part in msg.walk():
             content_type = part.get_content_type()
             if content_type in ["text/plain", "text/html"]:
-                body_content = part.get_payload(decode=True).decode(part.get_content_charset(), errors="replace")
+                charset = part.get_content_charset() or 'utf-8'  # Provide fallback charset
+                body_content = part.get_payload(decode=True).decode(charset, errors="replace")
                 # Parse HTML and keep URLs and content within tags
                 soup = BeautifulSoup(body_content, "html.parser")
 
@@ -48,7 +50,8 @@ def extract_email_info(raw_email):
                 body_plain = soup.get_text(separator=" ")  # Extract text with single-space separator
                 break  # Stop at the first text-based part
     else:
-        body_content = msg.get_payload(decode=True).decode(msg.get_content_charset(), errors="replace")
+        charset = msg.get_content_charset() or 'utf-8'  # Provide fallback charset
+        body_content = msg.get_payload(decode=True).decode(charset, errors="replace")
         soup = BeautifulSoup(body_content, "html.parser")
 
         # Remove all script and style tags
