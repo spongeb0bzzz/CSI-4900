@@ -37,6 +37,9 @@ def analyze_email():
         email_content = extract_eml(email_content)
         logging.info(f'Email content: {email_content}')
         email_body = email_content.get("body_plain", "")
+        email_info = preprocessing_content(email_body)
+        email_body = email_info.get("body", "")
+        
         
         # Log the extracted email body
         logging.info(f'Extracted Email Body: {email_body}')
@@ -53,7 +56,7 @@ def analyze_email():
         # Use the same function to preprocess text input as EML files
         email_info = preprocessing_content(email_content)
         email_body = email_info.get("body", "")
-
+        logging.info(f'Email info: {email_info}')
         # Log the preprocessed email body
         logging.info(f'Preprocessed Email Body: {email_body}')
 
