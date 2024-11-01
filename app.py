@@ -9,10 +9,12 @@ app = Flask(__name__)
 CORS(app)
 
 # Load models
-model = joblib.load('model/new email models/stacking_model.joblib')
-vectorizer = joblib.load('model/new email models/vectorizer.joblib')
-scaler = joblib.load('model/new email models/scaler_model.joblib')
-
+# model = joblib.load('model/new email models/stacking_model.joblib')
+model = joblib.load('CSI-4900\\model\\new email models\\stacking_model.joblib')
+# vectorizer = joblib.load('model/new email models/vectorizer.joblib')
+vectorizer = joblib.load('CSI-4900\\model\\new email models\\vectorizer.joblib')
+scaler = joblib.load('CSI-4900\\model\\new email models\\scaler_model.joblib')
+# scaler = joblib.load('model/new email models/scaler_model.joblib')
 import logging
 
 # Set up logging configuration
@@ -36,6 +38,7 @@ def analyze_email():
     else:
         # Get the email content from JSON
         email_content = request.json.get("email_content")
+        logging.info(f'Content:{email_content}')
         if not email_content:
             return jsonify({"error": "No email content provided"}), 400
 
