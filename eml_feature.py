@@ -36,6 +36,7 @@ def extract_eml(file):
 
     # Extract and clean body (plain text, retaining URLs and clickable text)
     body_plain = ""
+    
     if msg.is_multipart():
         for part in msg.walk():
             content_type = part.get_content_type()
@@ -64,6 +65,7 @@ def extract_eml(file):
             body_content = body_content.decode(charset, errors="replace")
         
         # Remove all script and style tags
+        soup = BeautifulSoup(body_content, "html.parser")
         for script_or_style in soup(["script", "style"]):
             script_or_style.decompose()
 
