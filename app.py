@@ -4,19 +4,26 @@ from preprocessing import preprocessing_content
 from flask_cors import CORS
 import numpy as np
 from eml_feature import extract_eml
+import logging
 
 app = Flask(__name__)
 CORS(app)
 
-# Load models
-# model = joblib.load('model/new email models/stacking_model.joblib')
-# vectorizer = joblib.load('model/new email models/vectorizer.joblib')
-# scaler = joblib.load('model/new email models/scaler_model.joblib')
+try:
+    model = joblib.load('model/new email models/stacking_model.joblib')
+    vectorizer = joblib.load('model/new email models/vectorizer.joblib')
+    scaler = joblib.load('model/new email models/scaler_model.joblib')
+    print("Loaded models using first path.")
+except FileNotFoundError:
+    # Attempt to load models with the second path
+    try:
+        model = joblib.load('CSI-4900\\model\\new email models\\stacking_model.joblib')
+        vectorizer = joblib.load('CSI-4900\\model\\new email models\\vectorizer.joblib')
+        scaler = joblib.load('CSI-4900\\model\\new email models\\scaler_model.joblib')
+        print("Loaded models using second path.")
+    except FileNotFoundError:
+        print("Error: Unable to load models from either path.")
 
-model = joblib.load('CSI-4900\\model\\new email models\\stacking_model.joblib')
-vectorizer = joblib.load('CSI-4900\\model\\new email models\\vectorizer.joblib')
-scaler = joblib.load('CSI-4900\\model\\new email models\\scaler_model.joblib')
-import logging
 
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
