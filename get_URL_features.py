@@ -13,7 +13,7 @@ from difflib import SequenceMatcher
 from threading import Thread
 from datetime import datetime
 
-page_ranking_df = pd.read_csv(r'C:\Users\Nassim\Downloads\top10milliondomains.csv')
+page_ranking_df = pd.read_csv('data\\top10milliondomains.csv')
 page_ranking_df.columns = page_ranking_df.columns.str.strip()  # Clean column names
 page_ranking_df.set_index('Domain', inplace=True)  # Set index to 'Domain'
 
@@ -595,10 +595,10 @@ def extract_features(url):
     }
 
 
-email_content = "Here are some links: https://example.com, www.testsite.org/page, and an IP link http://192.168.1.1/path."
-# email_content_none = "Here are some links: none"
-found_links = extract_links(email_content)
-# found_links = extract_links(email_content_none)
-print(found_links)
-for link in found_links:
-    print(extract_features(link))
+# email_content = "Here are some links: https://example.com, www.testsite.org/page, and an IP link http://192.168.1.1/path."
+# # email_content_none = "Here are some links: none"
+# found_links = extract_links(email_content)
+# # found_links = extract_links(email_content_none)
+# print(found_links)
+# for link in found_links:
+#     print(extract_features(link))

@@ -5,7 +5,8 @@ from flask_cors import CORS
 import numpy as np
 from eml_feature import extract_eml
 import logging
-from get_URL_features import extract_links
+from get_URL_features import extract_links,extract_features
+import pandas as pd
 
 app = Flask(__name__)
 CORS(app)
@@ -47,7 +48,9 @@ def analyze_email():
         email_content = raw_content.decode('utf-8', errors='replace') if isinstance(raw_content, bytes) else raw_content
         # Extract content from the uploaded .eml file
         email_content = extract_eml(email_content)
-        logging.info(f'Email content: {email_content}')
+
+        # logging.info(f'Email content: {email_content}')
+        
         email_body = email_content.get("body_plain", "")
         email_info = preprocessing_content(email_body)
         email_body = email_info.get("body", "")
@@ -77,6 +80,35 @@ def analyze_email():
     
     links = extract_links(email_body)
     logging.info(f'Contain links:{links}')
+
+
+    if links is not None:
+        predictions_url = []
+        
+        for url in links:
+            features = extract_features(url)
+            features_df = pd.DataFrame([features])  # Convert to DataFrame with one row
+
+
+            X_scaled_url = scaler_url.transform(features_df)
+
+            prediction_proba_model_url = model_url.predict_proba(X_scaled_url)[0]
+
+            # Probability of being spam
+            accuracy_model_url = prediction_proba_model_url[1]  
+
+            # Determine the prediction label
+            prediction_label_url = "Spam" if accuracy_model_url > 0.5 else "Not Spam"
+
+            # Append the result for each URL
+            predictions_url.append({     
+                'url': url,
+                'prediction_label': prediction_label_url,
+                'accuracy_model': accuracy_model_url
+            })
+
+    logging.info(f'Url prediction: {predictions_url}')
+
 
     # Preprocess the email body
     X_text = vectorizer.transform([email_body])
