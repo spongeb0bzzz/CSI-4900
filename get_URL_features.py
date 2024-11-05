@@ -13,22 +13,22 @@ from difflib import SequenceMatcher
 from threading import Thread
 from datetime import datetime
 
-page_ranking_df = pd.read_csv(r'C:\Users\Nassim\Downloads\top10milliondomains.csv')
-page_ranking_df.columns = page_ranking_df.columns.str.strip()  # Clean column names
-page_ranking_df.set_index('Domain', inplace=True)  # Set index to 'Domain'
+# page_ranking_df = pd.read_csv(r'C:\Users\Nassim\Downloads\top10milliondomains.csv')
+# page_ranking_df.columns = page_ranking_df.columns.str.strip()  # Clean column names
+# page_ranking_df.set_index('Domain', inplace=True)  # Set index to 'Domain'
 
-# Fetch the valid TLDs from the Public Suffix List
-valid_tlds_response = requests.get('https://raw.githubusercontent.com/publicsuffix/list/refs/heads/master/public_suffix_list.dat')
-valid_tlds = set()
+# # Fetch the valid TLDs from the Public Suffix List
+# valid_tlds_response = requests.get('https://raw.githubusercontent.com/publicsuffix/list/refs/heads/master/public_suffix_list.dat')
+# valid_tlds = set()
 
-# Load the list of URL shorteners from the text file
-url_shorteners_url = "https://raw.githubusercontent.com/PeterDaveHello/url-shorteners/refs/heads/master/list"
-url_shortener_response = requests.get(url_shorteners_url)
+# # Load the list of URL shorteners from the text file
+# url_shorteners_url = "https://raw.githubusercontent.com/PeterDaveHello/url-shorteners/refs/heads/master/list"
+# url_shortener_response = requests.get(url_shorteners_url)
 
-# Load the suspicious TLDs list once at the start
-tlds_url = 'https://raw.githubusercontent.com/mthcht/awesome-lists/refs/heads/main/Lists/suspicious_tlds_list.csv'
-suspicious_tlds_df = pd.read_csv(tlds_url)
-suspicious_tlds = set(suspicious_tlds_df['metadata_tld'].str.lower()) # Convert the TLD list to a set for faster lookup
+# # Load the suspicious TLDs list once at the start
+# tlds_url = 'https://raw.githubusercontent.com/mthcht/awesome-lists/refs/heads/main/Lists/suspicious_tlds_list.csv'
+# suspicious_tlds_df = pd.read_csv(tlds_url)
+# suspicious_tlds = set(suspicious_tlds_df['metadata_tld'].str.lower()) # Convert the TLD list to a set for faster lookup
 
 #  __________________________________________________________________________________
 # |                                                                                  |
@@ -504,3 +504,19 @@ def has_mx_record(url):
 def has_unicode_characters(url):
     """Check if the URL contains Unicode characters."""
     return 1 if any(ord(char) > 127 for char in url) else 0
+
+# extract all links in content
+def extract_links(email_content):
+   
+    regex = r"(?<![@\w:])(?:https?://|ftp://|www\.)[a-zA-Z0-9.-]+(?:[/a-zA-Z0-9.-]*)[^\s<>,'\"]\b/?|(?<![@\w:])[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:[/a-zA-Z0-9.-]*)[^\s<>,'\"]\b/?|(?:\d{1,3}\.){3}\d{1,3}(?:[/a-zA-Z0-9.-]*)[^\s<>,'\"]\b/?|http://\[[0-9a-fA-F:]+\](?:[/a-zA-Z0-9.-]*)[^\s<>,'\"]\b/?|ftp:[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|http://\[[0-9a-fA-F:]+\](?:\:[0-9]+)?[/a-zA-Z0-9.-]*"
+
+    # Find all matches using the regex
+    links = re.findall(regex, email_content)
+    
+    return links
+
+# email_content = "Here are some links: https://example.com, www.testsite.org/page, and an IP link http://192.168.1.1/path."
+# email_content_none = "Here are some links: none"
+# # found_links = extract_links(email_content)
+# found_links = extract_links(email_content_none)
+# print(found_links)

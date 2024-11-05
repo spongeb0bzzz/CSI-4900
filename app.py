@@ -5,6 +5,7 @@ from flask_cors import CORS
 import numpy as np
 from eml_feature import extract_eml
 import logging
+from get_URL_features import extract_links
 
 app = Flask(__name__)
 CORS(app)
@@ -70,6 +71,8 @@ def analyze_email():
     if not email_body:
         return jsonify({"error": "Email body is empty after processing"}), 400
     
+    links = extract_links(email_body)
+    logging.info(f'Contain links:{links}')
     # Preprocess the email body
     X_text = vectorizer.transform([email_body])
     
