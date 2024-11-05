@@ -9,17 +9,21 @@
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start; /* 1:*/
+            gap: 20px; /* 2:*/
             height: 100vh;
             background-color: #f4f4f9;
         }
-        .container {
+        .container, .links-section {
             text-align: center;
             width: 430px;
             padding: 20px;
             background-color: white;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* 3: */
         }
         #result {
             margin-top: 20px;
@@ -57,6 +61,16 @@
         .file-input input {
             width: auto;
         }
+        .links-section {
+            flex: 1; /*  4: */
+        }
+        .links-section h3 {
+            margin-bottom: 10px;
+        }
+        .link-item {
+            margin-bottom: 5px;
+            word-wrap: break-word;
+        }
     </style>
 </head>
 <body>
@@ -74,6 +88,10 @@
     <button onclick="submitEmail()">Analyze</button>
     <div id="result"></div>
 </div>
+<div class="links-section">
+    <h3>Contain Possible Links</h3>
+    <div id="linksList"></div>
+</div>
 
 <script>
     async function submitEmail() {
@@ -82,6 +100,7 @@
 
         // Clear previous result
         document.getElementById("result").innerText = "Analyzing...";
+        document.getElementById("linksList").innerHTML = ""; 
 
         if (emailFile) {
         // Use FormData to send the file as 'multipart/form-data'
@@ -131,6 +150,17 @@
             // Display the result correctly
             document.getElementById("result").innerText = 
                 `Result: ${result.Prediction}, Accuracy: ${result.Model_Accuracy}`;
+            // Display the links and accuracies in the links list
+            if (result.links && result.links.length > 0) {
+                    result.links.forEach(link => {
+                        const linkItem = document.createElement("div");
+                        linkItem.className = "link-item";
+                        linkItem.innerHTML = `Link: <a href="${link.url}" target="_blank">${link.url}</a>, Accuracy: ${link.accuracy}`;
+                        document.getElementById("linksList").appendChild(linkItem);
+                    });
+                } else {
+                    document.getElementById("linksList").innerText = "No links found.";
+                }
         } catch (error) {
             console.error('Error:', error);
             document.getElementById("result").innerText = 'Error occurred while analyzing the email';
@@ -160,6 +190,18 @@
             // Display the result correctly
             document.getElementById("result").innerText = 
                 `Result: ${result.Prediction}, Accuracy: ${result.Model_Accuracy}`;
+
+            // Display the links and accuracies in the links list
+            if (result.links && result.links.length > 0) {
+                    result.links.forEach(link => {
+                        const linkItem = document.createElement("div");
+                        linkItem.className = "link-item";
+                        linkItem.innerHTML = `Link: <a href="${link.url}" target="_blank">${link.url}</a>, Accuracy: ${link.accuracy}`;
+                        document.getElementById("linksList").appendChild(linkItem);
+                    });
+                } else {
+                    document.getElementById("linksList").innerText = "No links found.";
+                }
         } catch (error) {
             console.error('Error:', error);
             document.getElementById("result").innerText = 'Error occurred while analyzing the email';
