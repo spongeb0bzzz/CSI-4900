@@ -13,22 +13,22 @@ from difflib import SequenceMatcher
 from threading import Thread
 from datetime import datetime
 
-# page_ranking_df = pd.read_csv(r'C:\Users\Nassim\Downloads\top10milliondomains.csv')
-# page_ranking_df.columns = page_ranking_df.columns.str.strip()  # Clean column names
-# page_ranking_df.set_index('Domain', inplace=True)  # Set index to 'Domain'
+page_ranking_df = pd.read_csv(r'C:\Users\Nassim\Downloads\top10milliondomains.csv')
+page_ranking_df.columns = page_ranking_df.columns.str.strip()  # Clean column names
+page_ranking_df.set_index('Domain', inplace=True)  # Set index to 'Domain'
 
-# # Fetch the valid TLDs from the Public Suffix List
-# valid_tlds_response = requests.get('https://raw.githubusercontent.com/publicsuffix/list/refs/heads/master/public_suffix_list.dat')
-# valid_tlds = set()
+# Fetch the valid TLDs from the Public Suffix List
+valid_tlds_response = requests.get('https://raw.githubusercontent.com/publicsuffix/list/refs/heads/master/public_suffix_list.dat')
+valid_tlds = set()
 
-# # Load the list of URL shorteners from the text file
-# url_shorteners_url = "https://raw.githubusercontent.com/PeterDaveHello/url-shorteners/refs/heads/master/list"
-# url_shortener_response = requests.get(url_shorteners_url)
+# Load the list of URL shorteners from the text file
+url_shorteners_url = "https://raw.githubusercontent.com/PeterDaveHello/url-shorteners/refs/heads/master/list"
+url_shortener_response = requests.get(url_shorteners_url)
 
-# # Load the suspicious TLDs list once at the start
-# tlds_url = 'https://raw.githubusercontent.com/mthcht/awesome-lists/refs/heads/main/Lists/suspicious_tlds_list.csv'
-# suspicious_tlds_df = pd.read_csv(tlds_url)
-# suspicious_tlds = set(suspicious_tlds_df['metadata_tld'].str.lower()) # Convert the TLD list to a set for faster lookup
+# Load the suspicious TLDs list once at the start
+tlds_url = 'https://raw.githubusercontent.com/mthcht/awesome-lists/refs/heads/main/Lists/suspicious_tlds_list.csv'
+suspicious_tlds_df = pd.read_csv(tlds_url)
+suspicious_tlds = set(suspicious_tlds_df['metadata_tld'].str.lower()) # Convert the TLD list to a set for faster lookup
 
 #  __________________________________________________________________________________
 # |                                                                                  |
@@ -515,8 +515,90 @@ def extract_links(email_content):
     
     return links
 
-# email_content = "Here are some links: https://example.com, www.testsite.org/page, and an IP link http://192.168.1.1/path."
+# def extract_features(url):
+#     return {
+#         'get_url_length': get_url_length(url),
+#         'get_tld_length': get_tld_length(url),
+#         'get_domain_length': get_domain_length(url),
+#         'get_path_length': get_path_length(url),
+#         'get_open_page_rank': get_open_page_rank(url),
+#         'get_redirections_count': get_redirections_count(url),
+#         'get_char_continuation_rate': get_char_continuation_rate(url), # Not using 
+#         'get_num_subdomains': get_num_subdomains(url),
+#         # 'get_domain_registration_length': get_domain_registration_length(url), # Doesn't seem to work (always returns -1)
+#         'get_uppercase_ratio': get_uppercase_ratio(url),
+#         'get_number_of_letters': get_number_of_letters(url),
+#         'get_ratio_of_letters': get_ratio_of_letters(url),
+#         'get_number_of_equal': get_number_of_equal(url),
+#         'get_number_of_question': get_number_of_question(url),
+#         'get_number_of_and': get_number_of_and(url),
+#         'get_number_of_at': get_number_of_at(url),
+#         'get_number_of_hashtag': get_number_of_hashtag(url),
+#         'get_number_of_percent': get_number_of_percent(url),
+#         'get_number_of_dash': get_number_of_dash(url),
+#         'get_number_of_other_chars': get_number_of_other_chars(url),
+#         'get_letter_continuation': get_letter_continuation(url),
+#         'get_special_char_continuation': get_special_char_continuation(url),
+#         'get_number_of_digits': get_number_of_digits(url),
+#         'get_ratio_of_digits': get_ratio_of_digits(url),
+#         'get_entropy': get_entropy(url),
+#         'get_tld_length': get_tld_length(url),
+#         'get_domain_age': get_domain_age(url),
+
+#         'is_domain_ip': is_domain_ip(url),
+#         'is_https': is_https(url),
+#         'is_url_shortener': is_url_shortener(url),
+#         'is_valid_tld': is_valid_tld(url),
+#         'is_similar_to_legit_domain': is_similar_to_legit_domain(url),
+#         'is_suspicious_tld': is_suspicious_tld(url),
+
+#         # 'has_non_standard_port': has_non_standard_port(url), # Doesn't seem to work (always returns 0)
+#         'has_dns_record': has_dns_record(url),
+#         'has_suspicious_keywords': has_suspicious_keywords(url),
+#         'has_valid_ssl': has_valid_ssl(url),
+#         'has_file_extension': has_file_extension(url),
+#         'has_mx_record': has_mx_record(url),
+#         'has_unicode_characters': has_unicode_characters(url),
+#     }
+
+
+def extract_features(url):
+    return {
+        'URLLength': get_url_length(url),
+        'TLDLength': get_tld_length(url),
+        'DomainLength': get_domain_length(url),
+        'PathLength': get_path_length(url),
+        'PageRank': get_open_page_rank(url),
+        'RedirectionsCount': get_redirections_count(url),
+        'NumSubdomains': get_num_subdomains(url),
+        'UppercaseRatio': get_uppercase_ratio(url),
+        'NumLetters': get_number_of_letters(url),
+        'RatioLetters': get_ratio_of_letters(url),
+        'NumEqual': get_number_of_equal(url),
+        'NumQuestion': get_number_of_question(url),
+        'NumAnd': get_number_of_and(url),
+        'NumAt': get_number_of_at(url),
+        'NumHashtag': get_number_of_hashtag(url),
+        'NumPercent': get_number_of_percent(url),
+        'NumDash': get_number_of_dash(url),
+        'NumOtherChars': get_number_of_other_chars(url),
+        'LetterContinuation': get_letter_continuation(url),
+        'SpecialCharsContinuation': get_special_char_continuation(url),
+        'NumDigits': get_number_of_digits(url),
+        'RatioDigits': get_ratio_of_digits(url),
+        'IsIP': is_domain_ip(url),
+        'IsHTTPS': is_https(url),
+        'IsURLShort': is_url_shortener(url),
+        'HasDNS': has_dns_record(url),
+        'HasSuspicious': has_suspicious_keywords(url),
+        'HasValidSSL': has_valid_ssl(url),
+    }
+
+
+email_content = "Here are some links: https://example.com, www.testsite.org/page, and an IP link http://192.168.1.1/path."
 # email_content_none = "Here are some links: none"
-# # found_links = extract_links(email_content)
+found_links = extract_links(email_content)
 # found_links = extract_links(email_content_none)
-# print(found_links)
+print(found_links)
+for link in found_links:
+    print(extract_features(link))
