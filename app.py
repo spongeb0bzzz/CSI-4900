@@ -14,6 +14,8 @@ try:
     model = joblib.load('model/new email models/stacking_model.joblib')
     vectorizer = joblib.load('model/new email models/vectorizer.joblib')
     scaler = joblib.load('model/new email models/scaler_model.joblib')
+    model_url = joblib.load('model/models url/stacking_model.joblib')
+    scaler_url = joblib.load('model/models url/scaler.joblib')
     print("Loaded models using first path.")
 except FileNotFoundError:
     # Attempt to load models with the second path
@@ -21,6 +23,8 @@ except FileNotFoundError:
         model = joblib.load('CSI-4900\\model\\new email models\\stacking_model.joblib')
         vectorizer = joblib.load('CSI-4900\\model\\new email models\\vectorizer.joblib')
         scaler = joblib.load('CSI-4900\\model\\new email models\\scaler_model.joblib')
+        model_url = joblib.load('CSI-4900\\model\\models url\\stacking_model.joblib')
+        scaler_url = joblib.load('CSI-4900\\model\\models url\\scaler.joblib')
         print("Loaded models using second path.")
     except FileNotFoundError:
         print("Error: Unable to load models from either path.")
@@ -73,6 +77,7 @@ def analyze_email():
     
     links = extract_links(email_body)
     logging.info(f'Contain links:{links}')
+
     # Preprocess the email body
     X_text = vectorizer.transform([email_body])
     
