@@ -104,7 +104,7 @@ def analyze_email():
             predictions_url.append({     
                 'url': url,
                 'prediction_label': prediction_label_url,
-                'accuracy_model': accuracy_model_url
+                'accuracy_model': f"{float(accuracy_model_url) * 100:.2f}%"
             })
 
     logging.info(f'Url prediction: {predictions_url}')
@@ -125,10 +125,13 @@ def analyze_email():
     # Determine the prediction label
     prediction_label = "Spam" if accuracy_model > 0.5 else "Not Spam"
 
-    return jsonify({
-        "Model_Accuracy": f"{max(prediction_proba_model[0], prediction_proba_model[1]) * 100:.2f}%",
-        "Prediction": prediction_label
-    })
+    response_data = {
+    "Model_Accuracy": f"{max(prediction_proba_model[0], prediction_proba_model[1]) * 100:.2f}%",
+    "Prediction": prediction_label,
+    "links": predictions_url  # Ensure this key matches with JavaScript
+}
+    logging.info(f'Response Data: {response_data}')
+    return jsonify(response_data)
 
 if __name__ == '__main__':
     app.run(debug=True)

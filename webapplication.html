@@ -24,6 +24,10 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between; /* 3: */
+            
+        }
+        .links-section{
+            height:max-content;
         }
         #result {
             margin-top: 20px;
@@ -74,6 +78,7 @@
     </style>
 </head>
 <body>
+    
 <div class="container">
     <h2>Email Phishing Detector</h2>
     <textarea id="emailContent" placeholder="Paste email content here..."></textarea>
@@ -87,11 +92,13 @@
 
     <button onclick="submitEmail()">Analyze</button>
     <div id="result"></div>
+
+    
 </div>
 <div class="links-section">
     <h3>Contain Possible Links</h3>
     <div id="linksList"></div>
-</div>
+    </div>
 
 <script>
     async function submitEmail() {
@@ -123,6 +130,17 @@
             // Display the result correctly
             document.getElementById("result").innerText = 
                 `Result: ${result.Prediction}, Accuracy: ${result.Model_Accuracy}`;
+            // Display the links and accuracies in the links list
+            if (result.links && result.links.length > 0) {
+                    result.links.forEach(link => {
+                        const linkItem = document.createElement("div");
+                        linkItem.className = "link-item";
+                        linkItem.innerHTML = `Link: ${link.url}</a>, Result: ${link.prediction_label}, Accuracy: ${link.accuracy_model}`;
+                        document.getElementById("linksList").appendChild(linkItem);
+                    });
+                } else {
+                    document.getElementById("linksList").innerText = "No links found.";
+                }
         } catch (error) {
             console.error('Error:', error);
             document.getElementById("result").innerText = 'Error occurred while analyzing the email';
@@ -155,7 +173,7 @@
                     result.links.forEach(link => {
                         const linkItem = document.createElement("div");
                         linkItem.className = "link-item";
-                        linkItem.innerHTML = `Link: <a href="${link.url}" target="_blank">${link.url}</a>, Accuracy: ${link.accuracy}`;
+                        linkItem.innerHTML = `Link: ${link.url}</a>, Result: ${link.prediction_label}, Accuracy: ${link.accuracy_model}`;
                         document.getElementById("linksList").appendChild(linkItem);
                     });
                 } else {
@@ -196,7 +214,7 @@
                     result.links.forEach(link => {
                         const linkItem = document.createElement("div");
                         linkItem.className = "link-item";
-                        linkItem.innerHTML = `Link: <a href="${link.url}" target="_blank">${link.url}</a>, Accuracy: ${link.accuracy}`;
+                        linkItem.innerHTML = `Link: ${link.url}</a>, Result: ${link.prediction_label}, Accuracy: ${link.accuracy_model}`;
                         document.getElementById("linksList").appendChild(linkItem);
                     });
                 } else {
