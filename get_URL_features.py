@@ -513,7 +513,8 @@ def extract_links(email_content):
     # Find all matches using the regex
     links = re.findall(regex, email_content)
     
-    return links
+    unique_links = list(set(links))
+    return unique_links
 
 # def extract_features(url):
 #     return {
