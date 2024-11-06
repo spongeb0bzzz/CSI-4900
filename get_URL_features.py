@@ -508,7 +508,7 @@ def has_unicode_characters(url):
 # extract all links in content
 def extract_links(email_content):
    
-    regex = r"(?<![@\w:])(?:https?://|ftp://|www\.)[a-zA-Z0-9.-]+(?:[/a-zA-Z0-9.-]*)[^\s<>,'\"]\b/?|(?<![@\w:])[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:[/a-zA-Z0-9.-]*)[^\s<>,'\"]\b/?|(?:\d{1,3}\.){3}\d{1,3}(?:[/a-zA-Z0-9.-]*)[^\s<>,'\"]\b/?|http://\[[0-9a-fA-F:]+\](?:[/a-zA-Z0-9.-]*)[^\s<>,'\"]\b/?|ftp:[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|http://\[[0-9a-fA-F:]+\](?:\:[0-9]+)?[/a-zA-Z0-9.-]*"
+    regex = r"(?<![@\w:])(?:https?:\/\/|ftp:\/\/|www\.)[a-zA-Z0-9.-]+(?:[\/a-zA-Z0-9.-]*)[^\s<>,\'\"\)]*\b\/?=?|(?<![@\w:])[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:[\/a-zA-Z0-9.-]*)[^\s<>,\'\"\)]*\b\/?=?|(?:\d{1,3}\.){3}\d{1,3}(?:[\/a-zA-Z0-9.-]*)[^\s<>,\'\"\)]*\b\/?=?|http:\/\/\[[0-9a-fA-F:]+\](?:[\/a-zA-Z0-9.-]*)[^\s<>,\'\"\)]*\b\/?=?|ftp:[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|http:\/\/\[[0-9a-fA-F:]+\](?:\:[0-9]+)?[\/a-zA-Z0-9.-]*\/?"
 
     # Find all matches using the regex
     links = re.findall(regex, email_content)
