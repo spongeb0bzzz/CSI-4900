@@ -3,6 +3,8 @@ from email import message_from_file
 from email import message_from_string
 from email.utils import parsedate_to_datetime
 from bs4 import BeautifulSoup
+from email.parser import BytesParser
+from email import policy
 
 def extract_eml(file):
     """
@@ -97,6 +99,71 @@ def extract_eml(file):
         "sender_ip": sender_ip,
         "body_plain": body_plain
     }
+
+def extract_eml_body(file):
+    # Parse the EML file
+    # with open(file_path, 'rb') as f:
+    #     msg = BytesParser(policy=policy.default).parse(f)
+
+    #Change to take file as input
+    msg = BytesParser(policy=policy.default).parse(file)
+    # Get the email subject
+    subject = msg.get('subject', '')  # Empty string if no subject
+
+    # Traverse all parts of the email to find HTML content
+    body = None
+    if msg.is_multipart():
+        for part in msg.walk():  # Use .walk() to traverse all parts
+            if part.get_content_type() == "text/html":
+                body = part.get_payload(decode=True).decode(part.get_content_charset())
+                break
+    else:
+        if msg.get_content_type() == "text/html":
+            body = msg.get_payload(decode=True).decode(msg.get_content_charset())
+
+    if not body:
+        return "No HTML content found in the email."
+
+    # Process HTML content with BeautifulSoup
+    soup = BeautifulSoup(body, "html.parser")
+
+    # Find all image tags and replace them with their alt text
+    for img in soup.find_all('img', alt=True):
+        alt_text = img['alt'].strip()
+        if alt_text:
+            # Replace the <img> tag with its alt text
+            img.replace_with(alt_text)
+
+    # Remove non-visible or metadata tags
+    for tag in soup(['title', 'style', 'script', 'head', 'meta']):
+        tag.decompose()  # Remove tag and its contents
+    
+    # Remove empty tags or those with only whitespace
+    for tag in soup.find_all():
+        if not tag.get_text(strip=True):  # Check if tag's text is empty after stripping whitespace
+            tag.decompose()
+
+    # Find all links (anchor tags) and replace them with their text + URL
+    for link in soup.find_all('a', href=True):
+        link_text = link.get_text().strip() or "Link"
+        href = link['href']
+        # Replace link with the text + URL format
+        link.replace_with(f"{link_text} ({href})")
+
+    # Strip all HTML but keep URLs and their associated text
+    text = soup.get_text()
+
+    # Remove large spaces, including newlines and multiple spaces, and replace with a single space
+    text = re.sub(r'\s+', ' ', text).strip()
+
+    # Prepend the subject at the beginning with a single space in between
+    if subject:
+        full_text = f"{subject} {text}"
+    else:
+        full_text = text
+
+    # Return the processed text
+    return full_text
 
 
 
