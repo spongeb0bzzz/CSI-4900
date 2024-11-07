@@ -98,7 +98,15 @@
 <div class="links-section">
     <h3>Contain Possible Links</h3>
     <div id="linksList"></div>
+    <br>
+    <br>
+    <div class="final-result">
+        <h3>Final output</h3>
+        <div id="final-output"></div>
     </div>
+</div>
+
+
 
 <script>
     async function submitEmail() {
@@ -108,6 +116,7 @@
         // Clear previous result
         document.getElementById("result").innerText = "Analyzing...";
         document.getElementById("linksList").innerHTML = ""; 
+        document.getElementById("final-output").innerHTML = "";
 
         if (emailFile) {
         // Use FormData to send the file as 'multipart/form-data'
@@ -141,6 +150,9 @@
                 } else {
                     document.getElementById("linksList").innerText = "No links found.";
                 }
+
+            document.getElementById("final-output").innerText = 
+            `Result: ${result.OutputLabel}, Accuracy: ${result.output}`;
         } catch (error) {
             console.error('Error:', error);
             document.getElementById("result").innerText = 'Error occurred while analyzing the email';
@@ -179,6 +191,9 @@
                 } else {
                     document.getElementById("linksList").innerText = "No links found.";
                 }
+            
+            document.getElementById("final-output").innerText = 
+                `Result: ${result.OutputLabel}, Accuracy: ${result.output}`;
         } catch (error) {
             console.error('Error:', error);
             document.getElementById("result").innerText = 'Error occurred while analyzing the email';
@@ -220,6 +235,9 @@
                 } else {
                     document.getElementById("linksList").innerText = "No links found.";
                 }
+
+            document.getElementById("final-output").innerText = 
+                `Result: ${result.OutputLabel}, Accuracy: ${result.output}`;
         } catch (error) {
             console.error('Error:', error);
             document.getElementById("result").innerText = 'Error occurred while analyzing the email';
