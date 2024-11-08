@@ -37,15 +37,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 @app.route('/analyze_email', methods=['POST'])
 def analyze_email():
 
-
-    
+    ############################################################################################################################################################
+    ## GET Content from EML file
     ############################################################################################################################################################
 
-    ##GET Content from EML file
+    # Initialize email_body to prevent UnboundLocalError
+    email_body = None
 
-    ############################################################################################################################################################
-    # links = extract_links(email_body) --> IGNORE THIS LINE
-    logging.info(f'Request files: {request.files}')
     # Check if a file is included in the request
     if 'eml_file' in request.files:
         logging.info(f'Working with eml file')
@@ -55,156 +53,92 @@ def analyze_email():
         # Read and decode content from the file directly
         try:
             email_content = extract_eml_body(file)
-
-        except Exception as e:
-            try:
-                raw_content = file.read()
-                email_content = raw_content.decode('utf-8', errors='replace') if isinstance(raw_content, bytes) else raw_content
-                # Extract content from the uploaded .eml file
-                # logging.info(f'Email content: {email_content}')
-                
+            # Check if email_content is a dictionary
+            if isinstance(email_content, dict):
                 email_body = email_content.get("body_plain", "")
-                email_info = preprocessing_content(email_body)
+            else:
+                email_body = email_content  # Assume it's a string if not a dictionary
+            email_info = preprocessing_content(email_body)
+        except Exception as e:
+            logging.error(f"Error extracting email content: {e}")
+            return jsonify({"error": "Failed to process the email file"}), 400
+    
+    ############################################################################################################################################################
+    ## GET Content from Pasting
+    ############################################################################################################################################################
 
-            except Exception as e:
-                logging.error(f"Error extracting email content with extract_eml_body: {e}")
-
-        email_info = preprocessing_content(email_content)
-        email_body = email_info.get("body", "")
-        
-        
-        # Log the extracted email body
-        logging.info(f'Extracted Email Body: {email_body}')
-        
     else:
-        ############################################################################################################################################################
-
-        ##GET Content from Pasting
-
-        ############################################################################################################################################################
-        
-        logging.info(f'Working with pasting content')
         # Get the email content from JSON
-        email_content = request.json.get("email_content")
-        email_content = email_content.lstrip()
-        # logging.info(f'Content:{email_content}')
+        email_content = request.json.get("email_content", "").strip()
         if not email_content:
             return jsonify({"error": "No email content provided"}), 400
-
-        # Use the same function to preprocess text input as EML files
         email_info = preprocessing_content(email_content)
         email_body = email_info.get("body", "")
-        # logging.info(f'Email info: {email_info}')
-        # Log the preprocessed email body
-        logging.info(f'Preprocessed Email Body: {email_body}')
 
     if not email_body:
         return jsonify({"error": "Email body is empty after processing"}), 400
-    
 
     ############################################################################################################################################################
-
-    ##GET THE LINKS From Email body
-
+    ## GET THE LINKS From Email body
     ############################################################################################################################################################
+
     links = extract_links(email_body)
-    logging.info(f'Contain links:{links}')
-
-
+    logging.info(f'Extracted Email Body: {email_body}')
+    logging.info(f'Contain links: {links}')
+    
     ############################################################################################################################################################
-
-    ## Link prediciton
-
+    ## Link Prediction
     ############################################################################################################################################################
-    if links is not None:
-        predictions_url = []
-        
+    
+    predictions_url = []
+    # Process URL predictions if there are links
+    if links:
         for url in links:
             features = extract_features(url)
-            features_df = pd.DataFrame([features])  # Convert to DataFrame with one row
-
-
+            features_df = pd.DataFrame([features])
             X_scaled_url = scaler_url.transform(features_df)
-
             prediction_proba_model_url = model_url.predict_proba(X_scaled_url)[0]
-
-            # Probability of being spam
-            accuracy_model_url = prediction_proba_model_url[1]  
-
-            # Determine the prediction label
+            accuracy_model_url = prediction_proba_model_url[1]
             prediction_label_url = "Spam" if accuracy_model_url > 0.5 else "Not Spam"
-
-            # Append the result for each URL
-            predictions_url.append({     
+            predictions_url.append({
                 'url': url,
                 'prediction_label': prediction_label_url,
                 'accuracy_model': f"{max(prediction_proba_model_url[0], prediction_proba_model_url[1]) * 100:.2f}%",
                 'spam_rate': accuracy_model_url
             })
 
-    logging.info(f'Url prediction: {predictions_url}')
-
+    ############################################################################################################################################################
+    ## Content Prediction
     ############################################################################################################################################################
 
-    ## Content prediction
-
-    ############################################################################################################################################################
-
-    # Preprocess the email body
     X_text = vectorizer.transform([email_body])
-    
-    # Apply scaling
     X_scaled = scaler.transform(X_text.toarray())
-
-    # Make a prediction
     prediction_proba_model = model.predict_proba(X_scaled)[0]
-    logging.info(f'PPM: {prediction_proba_model}')
-
-    # Calculate individual accuracies
-    accuracy_model = prediction_proba_model[1]  # Probability of being spam
-
-    # Determine the prediction label
+    accuracy_model = prediction_proba_model[1]
     prediction_label = "Spam" if accuracy_model > 0.5 else "Not Spam"
 
-
-
+    ############################################################################################################################################################
+    ## Combine Result 
     ############################################################################################################################################################
 
-    ## Combine result 
-
-    ############################################################################################################################################################
-
-    #Calculate the final output
+    # Final output calculation
     accuracies = [float(item['spam_rate']) for item in predictions_url]
-
-    if accuracies:
-        average_accuracy_list = sum(accuracies)/len(accuracies)
-    else:
-        average_accuracy_list = 0
-
-    final_output = (0.7 * average_accuracy_list +0.3* accuracy_model) if average_accuracy_list != 0 else accuracy_model
-    logging.info(f'accuracies: {accuracies}')
-    logging.info(f'aal: {average_accuracy_list}')
-    logging.info(f'AM: {accuracy_model}')
-    logging.info(f'Final out: {final_output}')
-
-    final_label = "Spam" if final_output >  0.5 else "Not Spam"
-
-    final_accuracy = final_output if final_label == 'Spam' else 1-final_output
+    average_accuracy_list = sum(accuracies) / len(accuracies) if accuracies else 0
+    final_output = (0.7 * average_accuracy_list + 0.3 * accuracy_model) if average_accuracy_list else accuracy_model
+    final_label = "Spam" if final_output > 0.5 else "Not Spam"
+    final_accuracy = final_output if final_label == 'Spam' else 1 - final_output
 
     ############################################################################################################################################################
-
     ## Return Data
-
     ############################################################################################################################################################
 
     response_data = {
-    "Model_Accuracy": f"{max(prediction_proba_model[0], prediction_proba_model[1]) * 100:.2f}%",
-    "Prediction": prediction_label,
-    "links": predictions_url,  # Ensure this key matches with JavaScript
-    "output": f"{final_accuracy *100:.2f}%",
-    "OutputLabel": final_label
-}
+        "Model_Accuracy": f"{max(prediction_proba_model[0], prediction_proba_model[1]) * 100:.2f}%",
+        "Prediction": prediction_label,
+        "links": predictions_url,
+        "output": f"{final_accuracy * 100:.2f}%",
+        "OutputLabel": final_label
+    }
     logging.info(f'Response Data: {response_data}')
     return jsonify(response_data)
 
