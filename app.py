@@ -44,7 +44,7 @@ def analyze_email():
     ##GET Content from EML file
 
     ############################################################################################################################################################
-    links = extract_links(email_body)
+    # links = extract_links(email_body) --> IGNORE THIS LINE
     logging.info(f'Request files: {request.files}')
     # Check if a file is included in the request
     if 'eml_file' in request.files:
