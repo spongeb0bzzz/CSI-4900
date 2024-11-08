@@ -593,6 +593,14 @@ def extract_features(url):
         'HasDNS': has_dns_record(url),
         'HasSuspicious': has_suspicious_keywords(url),
         'HasValidSSL': has_valid_ssl(url),
+        'Entropy': get_entropy(url),
+        'HasFileExtension': has_file_extension(url),
+        'IsValidTLD': is_valid_tld(url),
+        'SimilarToLegitDomain': is_similar_to_legit_domain(url),
+        'DomainAge': get_domain_age(url),
+        'IsSuspiciousTLD': is_suspicious_tld(url),
+        'HasMXRecord': has_mx_record(url),
+        'HasUnicodeChars': has_unicode_characters(url)
     }
 
 
