@@ -125,7 +125,7 @@ def clean_dataset(dataset):
 
   return dataset
 
-combined_df = load_and_process_sources()
+combined_df = load_and_process_sources(clean=False)
 combined_df = clean_dataset(combined_df)
 combined_df.set_index('link', inplace=True)  # Set index to 'link'
 
@@ -137,13 +137,16 @@ def get_result_from_database(link):
     '''
     cleaned_link = clean_link(link)
 
-    # Check if the link exists in the page_ranking_df (benign domains)
-    if cleaned_link in page_ranking_df.index:
-        return 0  # Return 0 for benign if the domain is found in the page ranking dataset
+    if link in combined_df.index:
+        return combined_df.loc[link, 'status']  # Return the status (0 for benign, 1 for phishing)
 
     # Check if the link exists in the combined_df (phishing dataset)
     if cleaned_link in combined_df.index:
         return combined_df.loc[cleaned_link, 'status']  # Return the status (0 for benign, 1 for phishing)
+
+    # Check if the link exists in the page_ranking_df (benign domains)
+    if cleaned_link in page_ranking_df.index:
+        return 0  # Return 0 for benign if the domain is found in the page ranking dataset
 
     return None  # If the link is not found in either dataset, return None
 
@@ -221,21 +224,6 @@ def query_link_similarity(query_link, top_k=1):
         })
     
     return results
-
-# Step 3: Test the similarity function
-query = "https://storage.googleapis.com/hasssalee/hamsrefly.html#?Z289MSZzMT0xOTk2Mjg5JnMyPTQyOTcxODMyMSZzMz1DQQ=="
-results = query_link_similarity(query, top_k=3)
-
-# Display the most similar links with similarity score and status
-for result in results:
-    score = float(result["similarity_score"])  # Explicitly cast to float if necessary
-    matched_link = result["matched_link"]
-    status = result["status"]
-    
-    print(f"Similarity Score: {score:.2f}%")
-    print(f"Matched Link: {matched_link}")
-    print(f"Status: {status}\n")
-
 
 '''
 Example query:
