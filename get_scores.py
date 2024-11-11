@@ -33,23 +33,16 @@ def clean_link(link):
         return None
 
 # Function to download and parse the phishing links
-def load_and_process_sources(clean=True):
+def load_and_process_sources():
     # Load the first dataset (combined phishing and benign URLs)
     combined_urls_url = "https://raw.githubusercontent.com/spongeb0bzzz/CSI-4900/refs/heads/main/data/combined_urls.csv"
     combined_urls = pd.read_csv(combined_urls_url)
 
-    if(clean):
-        # Clean the "link" column (remove scheme and subdomain) and remove null values
-        combined_urls['cleaned_link'] = combined_urls['link'].apply(clean_link)
-        combined_urls.dropna(subset=['cleaned_link'], inplace=True)  # Remove rows with None in 'cleaned_link'
+    # Drop rows with null values in 'link'
+    combined_urls.dropna(subset=['link'], inplace=True)
 
-        # Create a set of cleaned links with their status (0 for benign, 1 for phishing)
-        combined_urls_set = set(zip(combined_urls['cleaned_link'], combined_urls['status']))
-
-    else:
-        combined_urls['cleaned_link'] = combined_urls['link']
-        combined_urls.dropna(subset=['cleaned_link'], inplace=True)  # Remove rows with None in 'cleaned_link'
-        combined_urls_set = set(zip(combined_urls['cleaned_link'], combined_urls['status']))
+    # Create a set of full links with their status (0 for benign, 1 for phishing)
+    combined_urls_set = set(zip(combined_urls['link'], combined_urls['status']))
 
     # Load the second set of sources (multiple files from GitHub)
     sources = [
@@ -63,69 +56,70 @@ def load_and_process_sources(clean=True):
 
     # Process each source
     for source_url in sources:
+        response = requests.get(source_url)
+        
+        # For JSON files, parse and add each domain as a phishing link
         if source_url.endswith('.json'):
-            # If the source is a JSON file, load it as a list
-            response = requests.get(source_url)
             domains = json.loads(response.text)
             for domain in domains:
-                cleaned_domain = clean_link(domain)
-                combined_urls_set.add((cleaned_domain, 1))  # All entries from these sources are phishing
+                combined_urls_set.add((domain, 1))  # Mark all entries as phishing
+
+        # For text files, add each line as a phishing link
         else:
-            # If the source is a text file, load it line by line
-            response = requests.get(source_url)
             for line in response.text.splitlines():
-                cleaned_domain = clean_link(line)
-                combined_urls_set.add((cleaned_domain, 1))  # All entries from these sources are phishing
+                if line:  # Avoid empty lines
+                    combined_urls_set.add((line, 1))  # Mark all entries as phishing
 
     return pd.DataFrame(list(combined_urls_set), columns=['link', 'status'])
 
 def clean_dataset(dataset):
-  regex = r"(?:https?:\/\/[a-zA-Z0-9.-]+|ftp:\/\/[a-zA-Z0-9.-]+|\/\/[a-zA-Z0-9.-]+|www\.[a-zA-Z0-9.-]+|[a-zA-Z0-9-]+\.[a-zA-Z]{1,}|(?:\d{1,3}\.){3}\d{1,3})(?:[\/a-zA-Z0-9.-]*)[^\s<>,\'\"\)]*"
+    regex = r"(?:https?:\/\/[a-zA-Z0-9.-]+|ftp:\/\/[a-zA-Z0-9.-]+|\/\/[a-zA-Z0-9.-]+|www\.[a-zA-Z0-9.-]+|[a-zA-Z0-9-]+\.[a-zA-Z]{1,}|(?:\d{1,3}\.){3}\d{1,3})(?:[\/a-zA-Z0-9.-]*)[^\s<>,\'\"\)]*"
 
-  # Apply the regex to the 'link' column to capture valid URLs
-  valid_links = dataset['link'].str.contains(regex, regex=True)
+    # Apply the regex to the 'link' column to capture valid URLs
+    valid_links = dataset['link'].str.contains(regex, regex=True)
 
-  # Count the number of valid links
-  num_valid_links = valid_links.sum()
-  total_links = dataset.shape[0]
+    # Count the number of valid links
+    num_valid_links = valid_links.sum()
+    total_links = dataset.shape[0]
 
-  # Calculate the percentage of captured links
-  percent_captured = (num_valid_links / total_links) * 100 if total_links > 0 else 0
+    # Calculate the percentage of captured links
+    percent_captured = (num_valid_links / total_links) * 100 if total_links > 0 else 0
 
-  # Print the results
-#   print(f"Number of valid links: {num_valid_links}")
-#   print(f"Total links: {total_links}")
-#   print(f"Percentage of captured links: {percent_captured:.2f}%")
+    # Print the results
+    # print(f"Number of valid links: {num_valid_links}")
+    # print(f"Total links: {total_links}")
+    # print(f"Percentage of captured links: {percent_captured:.2f}%")
 
-  valid_links = dataset['link'].str.contains(regex, regex=True)
+    # Filter the dataset to get links that weren't captured by the regex
+    uncaptured_links = dataset[~valid_links]
 
-  # Filter the dataset to get links that weren't captured by the regex
-  uncaptured_links = dataset[~valid_links]
+    # Set pandas to display all rows
+    pd.set_option('display.max_rows', None)
 
-  # Set pandas to display all rows
-  pd.set_option('display.max_rows', None)
+    # Print the entire DataFrame of uncaptured links
+    # print("Links not captured by the regex:")
+    # print(uncaptured_links)
 
-  # Print the entire DataFrame of uncaptured links
-  print("Links not captured by the regex:")
-  print(uncaptured_links)
+    # Keep only the captured links
+    dataset = dataset[valid_links]
 
-  # Keep only the captured links
-  dataset = dataset[valid_links]
+    # Mapping string values to integers in the 'status' column
+    dataset['status'] = dataset['status'].replace({
+        '1': 1,
+        '0': 0,
+        'malware': 1
+    })
 
-  # Mapping string values to integers in the 'status' column
-  dataset['status'] = dataset['status'].replace({
-      '1': 1,
-      '0': 0,
-      'malware': 1
-  })
+    # Check if links are in the page ranking dataset and remove them if they are
+    page_ranking_set = set(page_ranking_df.index)
+    dataset = dataset[~dataset['link'].isin(page_ranking_set)]
 
+    # Optionally, reset the index if desired
+    dataset.reset_index(drop=True, inplace=True)
 
-  # Optionally, reset the index if desired
-  dataset.reset_index(drop=True, inplace=True)
+    return dataset
 
-  return dataset
-
-combined_df = load_and_process_sources(clean=False)
+combined_df = load_and_process_sources()
 combined_df = clean_dataset(combined_df)
 combined_df.set_index('link', inplace=True)  # Set index to 'link'
 
@@ -134,6 +128,7 @@ def get_result_from_database(link):
     Returns 1 (100%) if the link is phishing
     Returns 0 (0%) if the link is benign
     Returns None if the link is not found
+    Return -1 if the domain 
     '''
     cleaned_link = clean_link(link)
 
@@ -142,13 +137,19 @@ def get_result_from_database(link):
 
     # Check if the link exists in the combined_df (phishing dataset)
     if cleaned_link in combined_df.index:
-        return combined_df.loc[cleaned_link, 'status']  # Return the status (0 for benign, 1 for phishing)
+        if cleaned_link == link:
+          return combined_df.loc[cleaned_link, 'status']  # Return the status (0 for benign, 1 for phishing)
+        return -1 if combined_df.loc[cleaned_link, 'status'] == 1 else -2 # Return the status if the link partially matches a link in the dataset (-2 if likely benign, -1 if likely phishing)
 
     # Check if the link exists in the page_ranking_df (benign domains)
     if cleaned_link in page_ranking_df.index:
-        return 0  # Return 0 for benign if the domain is found in the page ranking dataset
+        if cleaned_link == link: 
+          return 0  # Return 0 for benign if the domain is found in the page ranking dataset
+        return -2  # Return -2 if the link partially matches a domain in the dataset
+
 
     return None  # If the link is not found in either dataset, return None
+
 
 ######################################################################
 # CODE FOR CHECKING IP ADDRESS
