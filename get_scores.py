@@ -4,8 +4,11 @@ import re
 import json
 from urllib.parse import urlparse
 import joblib
-import pandas as pd
-import faiss
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import normalize
+from scipy.sparse import csr_matrix
 
 ######################################################################
 # CODE FOR CHECK IF LINK IS IN DATABASE
@@ -186,27 +189,66 @@ def check_sender_ip(sender_ip):
 # CODE FOR CASE-BASED REASONNING
 ######################################################################
 
-vectorizer = joblib.load("")
-faiss_index = faiss.read_index("")
-links = joblib.load("")
-statuses = joblib.load("")
+vectorizer = joblib.load(r"model\cbr\CBR_vectorizer.joblib")
+link_vectors = joblib.load(r"model\cbr\link_vectors.joblib")
+statuses = joblib.load(r"model\cbr\statuses.joblib")
+links = joblib.load(r"model\cbr\links.joblib")
 
-def get_cbr_score(link, top_k=1):
-    query_vector = vectorizer.transform([link]).toarray().astype('float32')
-    distances, indices = faiss_index.search(query_vector, top_k)
 
+def query_link_similarity(query_link, top_k=1):
+    # Vectorize and normalize the query link
+    query_vector = vectorizer.transform([query_link])
+    query_vector = normalize(query_vector, norm='l2', axis=1)
+    
+    # Calculate cosine similarity via matrix multiplication
+    cosine_similarities = query_vector.dot(link_vectors.T).toarray().flatten()
+    
+    # Get the indices of the top_k highest similarity scores
+    top_indices = np.argpartition(-cosine_similarities, range(top_k))[:top_k]
+    top_indices = top_indices[np.argsort(-cosine_similarities[top_indices])]
+
+    # Collect the top-k results
     results = []
-    for i in range(top_k):
-        idx = indices[0][i]
-        similarity_score = 100 - distances[0][i]  # Distance to similarity percentage
+    for idx in top_indices:
+        similarity_score = cosine_similarities[idx] * 100
         matched_link = links[idx]
-        status = 1 if statuses[idx] == 1 else 0  # 1 for phishing, 0 for benign
-
+        status = "Phishing" if statuses[idx] == 1 else "Benign"
+        
         results.append({
             "similarity_score": similarity_score,
             "matched_link": matched_link,
             "status": status
         })
-
+    
     return results
-# Example to get similarity score: results[0]['similarity_score']
+
+# Step 3: Test the similarity function
+query = "https://storage.googleapis.com/hasssalee/hamsrefly.html#?Z289MSZzMT0xOTk2Mjg5JnMyPTQyOTcxODMyMSZzMz1DQQ=="
+results = query_link_similarity(query, top_k=3)
+
+# Display the most similar links with similarity score and status
+for result in results:
+    score = float(result["similarity_score"])  # Explicitly cast to float if necessary
+    matched_link = result["matched_link"]
+    status = result["status"]
+    
+    print(f"Similarity Score: {score:.2f}%")
+    print(f"Matched Link: {matched_link}")
+    print(f"Status: {status}\n")
+
+
+'''
+Example query:
+query = "https://storage.googleapis.com/hasssalee/hamsrefly.html#?Z289MSZzMT0xOTk2Mjg5JnMyPTQyOTcxODMyMSZzMz1DQQ=="
+results = query_link_similarity(query, top_k=3)
+
+# Display the most similar links with similarity score and status
+for result in results:
+    score = float(result["similarity_score"])  # Explicitly cast to float if necessary
+    matched_link = result["matched_link"]
+    status = result["status"]
+    
+    print(f"Similarity Score: {score:.2f}%")
+    print(f"Matched Link: {matched_link}")
+    print(f"Status: {status}\n")
+'''
