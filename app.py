@@ -15,8 +15,8 @@ try:
     model = joblib.load('model/new email models/stacking_model.joblib')
     vectorizer = joblib.load('model/new email models/vectorizer.joblib')
     scaler = joblib.load('model/new email models/scaler_model.joblib')
-    model_url = joblib.load('model/models url/stacking_model(1).joblib')
-    scaler_url = joblib.load('model/models url/scaler(1).joblib')
+    model_url = joblib.load('model/models url/stacking_model(2).joblib')
+    scaler_url = joblib.load('model/models url/scaler(2).joblib')
     print("Loaded models using first path.")
 except FileNotFoundError:
     # Attempt to load models with the second path
@@ -24,8 +24,8 @@ except FileNotFoundError:
         model = joblib.load('CSI-4900\\model\\new email models\\stacking_model.joblib')
         vectorizer = joblib.load('CSI-4900\\model\\new email models\\vectorizer.joblib')
         scaler = joblib.load('CSI-4900\\model\\new email models\\scaler_model.joblib')
-        model_url = joblib.load('CSI-4900\\model\\models url\\stacking_model(1).joblib')
-        scaler_url = joblib.load('CSI-4900\\model\\models url\\scaler(1).joblib')
+        model_url = joblib.load('CSI-4900\\model\\models url\\stacking_model(2).joblib')
+        scaler_url = joblib.load('CSI-4900\\model\\models url\\scaler(2).joblib')
         print("Loaded models using second path.")
     except FileNotFoundError:
         print("Error: Unable to load models from either path.")
