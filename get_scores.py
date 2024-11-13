@@ -139,13 +139,13 @@ def get_result_from_database(link):
     if cleaned_link in combined_df.index:
         if cleaned_link == link:
           return combined_df.loc[cleaned_link, 'status']  # Return the status (0 for benign, 1 for phishing)
-        return -1 if combined_df.loc[cleaned_link, 'status'] == 1 else -2 # Return the status if the link partially matches a link in the dataset (-2 if likely benign, -1 if likely phishing)
+        return 0.75 if combined_df.loc[cleaned_link, 'status'] == 1 else 0.25 # Return the status if the link partially matches a link in the dataset (-2 if likely benign, -1 if likely phishing)
 
     # Check if the link exists in the page_ranking_df (benign domains)
     if cleaned_link in page_ranking_df.index:
         if cleaned_link == link: 
           return 0  # Return 0 for benign if the domain is found in the page ranking dataset
-        return -2  # Return -2 if the link partially matches a domain in the dataset
+        return 0.25  # Return -2 if the link partially matches a domain in the dataset
 
 
     return None  # If the link is not found in either dataset, return None

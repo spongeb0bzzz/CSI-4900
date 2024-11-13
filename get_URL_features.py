@@ -508,12 +508,21 @@ def has_unicode_characters(url):
 # extract all links in content
 def extract_links(email_content):
    
+   # Regex to capture links
     regex = r"(?<![@\w:])(?:https?:\/\/|ftp:\/\/|www\.)[a-zA-Z0-9.-]+(?:[\/a-zA-Z0-9.-]*)[^\s<>,\'\"\)]*\b\/?=?|(?<![@\w:])[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:[\/a-zA-Z0-9.-]*)[^\s<>,\'\"\)]*\b\/?=?|(?:\d{1,3}\.){3}\d{1,3}(?:[\/a-zA-Z0-9.-]*)[^\s<>,\'\"\)]*\b\/?=?|http:\/\/\[[0-9a-fA-F:]+\](?:[\/a-zA-Z0-9.-]*)[^\s<>,\'\"\)]*\b\/?=?|ftp:[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|http:\/\/\[[0-9a-fA-F:]+\](?:\:[0-9]+)?[\/a-zA-Z0-9.-]*\/?"
+    
+    # Regex to capture email addresses
+    email_regex = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
 
     # Find all matches using the regex
     links = re.findall(regex, email_content)
-    
-    unique_links = list(set(links))
+    emails = re.findall(email_regex, email_content)
+
+    # Remove any email address from the list of links captured 
+    cleaned_links = [item for item in links if item not in emails]
+
+    # Remove duplicates
+    unique_links = list(set(cleaned_links))
     return unique_links
 
 # def extract_features(url):
