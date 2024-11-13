@@ -214,9 +214,9 @@ def query_link_similarity(query_link, top_k=1):
     # Collect the top-k results
     results = []
     for idx in top_indices:
-        similarity_score = cosine_similarities[idx] * 100
+        similarity_score = cosine_similarities[idx] # return similarity score from 0 to 1
         matched_link = links[idx]
-        status = "Phishing" if statuses[idx] == 1 else "Benign"
+        status = 1 if statuses[idx] == 1 else 0 # Return 1 if phishing or 0 if benign
         
         results.append({
             "similarity_score": similarity_score,
