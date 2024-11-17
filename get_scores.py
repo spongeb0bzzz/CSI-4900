@@ -226,6 +226,28 @@ def query_link_similarity(query_link, top_k=1):
     
     return results
 
+
+def get_average_similarity(link):
+    output =  query_link_similarity(link, top_k= 3)
+
+
+    weighted_scores = []
+
+    for result in output:
+            similarity_score = result["similarity_score"]
+            status = result["status"]
+            
+            if status == 1:
+                # Phishing: use similarity score directly
+                weighted_score = similarity_score * status
+            else:
+                # Benign: adjust score to reflect similarity to safe links
+                weighted_score = 1 - (similarity_score * (1 - status))
+            
+            weighted_scores.append(weighted_score)
+
+    return sum(weighted_scores) /3 
+
 '''
 Example query:
 query = "https://storage.googleapis.com/hasssalee/hamsrefly.html#?Z289MSZzMT0xOTk2Mjg5JnMyPTQyOTcxODMyMSZzMz1DQQ=="
@@ -241,3 +263,18 @@ for result in results:
     print(f"Matched Link: {matched_link}")
     print(f"Status: {status}\n")
 '''
+
+
+# test = "http://www.jp519.com/"
+
+# # # # result = query_link_similarity(test, top_k= 3)
+# # result = get_average_similarity(test)
+
+# # print(result)
+
+# result2 = get_result_from_database(test)
+
+# print(f'result = {result2}')
+# print(type(result2))
+
+

@@ -7,6 +7,7 @@ from eml_feature import extract_eml,extract_eml_body
 import logging
 from get_URL_features import extract_links,extract_features
 import pandas as pd
+from get_scores import get_average_similarity, get_result_from_database  # database score and CBR
 
 app = Flask(__name__)
 CORS(app)
@@ -94,18 +95,59 @@ def analyze_email():
     # Process URL predictions if there are links
     if links:
         for url in links:
-            features = extract_features(url)
-            features_df = pd.DataFrame([features])
-            X_scaled_url = scaler_url.transform(features_df)
-            prediction_proba_model_url = model_url.predict_proba(X_scaled_url)[0]
-            accuracy_model_url = prediction_proba_model_url[1]
-            prediction_label_url = "Spam" if accuracy_model_url > 0.5 else "Not Spam"
-            predictions_url.append({
-                'url': url,
-                'prediction_label': prediction_label_url,
-                'accuracy_model': f"{max(prediction_proba_model_url[0], prediction_proba_model_url[1]) * 100:.2f}%",
-                'spam_rate': accuracy_model_url
-            })
+
+
+            db_results = get_result_from_database(url)  
+
+            #Get the similarity score using CBR
+            cbr_score = get_average_similarity(url) 
+
+            if db_results is not None:
+                if db_results == 1 :
+                    # If any database score is phishing, return phishing and stop further checks
+                    predictions_url.append({
+                        'url': url,
+                        'prediction_label': "Spam",
+                        'accuracy_model': "100.00%",  # Database result is conclusive
+                        'spam_rate': 1.0,
+                        'db_score': 1,
+                        'cbr': cbr_score
+                    })
+                    continue
+                elif db_results == 0:
+                    # If any database score is benign, return safe and stop further checks
+                    predictions_url.append({
+                        'url': url,
+                        'prediction_label': "Not Spam",
+                        'accuracy_model': "100.00%",  # Database result is conclusive
+                        'spam_rate': 0.0,
+                        'db_score': 0,
+                        'cbr': cbr_score
+                    })
+                    continue
+
+            else:
+            
+
+
+
+
+                features = extract_features(url)
+                features_df = pd.DataFrame([features])
+                X_scaled_url = scaler_url.transform(features_df)
+                prediction_proba_model_url = model_url.predict_proba(X_scaled_url)[0]
+                accuracy_model_url = prediction_proba_model_url[1]
+                prediction_label_url = "Spam" if accuracy_model_url > 0.5 else "Not Spam"
+                predictions_url.append({
+                    'url': url,
+                    'prediction_label': prediction_label_url,
+                    'accuracy_model': f"{max(prediction_proba_model_url[0], prediction_proba_model_url[1]) * 100:.2f}%",
+                    'spam_rate': accuracy_model_url,
+                    'db_score':db_results,
+                    'cbr': cbr_score
+                })
+
+    # logging.info(f'PD: {predictions_url}')
 
     ############################################################################################################################################################
     ## Content Prediction
@@ -122,11 +164,57 @@ def analyze_email():
     ############################################################################################################################################################
 
     # Final output calculation
-    accuracies = [float(item['spam_rate']) for item in predictions_url]
-    average_accuracy_list = sum(accuracies) / len(accuracies) if accuracies else 0
-    final_output = (0.7 * average_accuracy_list + 0.3 * accuracy_model) if average_accuracy_list else accuracy_model
-    final_label = "Spam" if final_output > 0.5 else "Not Spam"
-    final_accuracy = final_output if final_label == 'Spam' else 1 - final_output
+
+    if predictions_url:
+    # Check if any URL in the list has a db_score of 1 or 0
+        db_scores = [item.get('db_score', -1) for item in predictions_url]
+        
+        if 1 in db_scores:
+            # If any db_score is 1, final label is Spam with 100% accuracy
+            final_label = "Spam"
+            final_accuracy = 1.0
+        elif 0 in db_scores:
+            # If any db_score is 0, final label is Not Spam with 100% accuracy
+            final_label = "Not Spam"
+            final_accuracy = 1.0
+        else:
+            # Extract values for accuracies, cbr, and db_score
+            accuracies = [float(item['spam_rate']) for item in predictions_url]
+            cbr_final = [float(item['cbr']) for item in predictions_url]
+            db_final = [float(item['db_score']) for item in predictions_url if item.get('db_score') is not None]
+
+            # Calculate averages for the respective lists
+            average_db_list = sum(db_final) / len(db_final) if db_final else None
+            average_cbr_list = sum(cbr_final) / len(cbr_final) if cbr_final else 0
+            average_accuracy_list = sum(accuracies) / len(accuracies) if accuracies else 0
+
+            # Final score calculation based on the presence of db scores
+            if average_db_list is not None:
+                final_output = (
+                    0.6 * average_accuracy_list +
+                    0.2 * accuracy_model +
+                    0.1 * average_cbr_list +
+                    0.1 * average_db_list
+                )
+            else:
+                # Adjust formula if db scores are missing
+                final_output = (
+                    0.7 * average_accuracy_list +
+                    0.2 * accuracy_model +
+                    0.1 * average_cbr_list
+                )
+
+            # Determine final label and accuracy
+            final_label = "Spam" if final_output > 0.5 else "Not Spam"
+            final_accuracy = final_output if final_label == 'Spam' else 1 - final_output
+    else:
+        # Fallback if predictions_url is empty
+        final_label = "Spam" if accuracy_model > 0.5 else "Not Spam"
+        final_accuracy = accuracy_model if final_label == 'Spam' else 1 - accuracy_model
+
+
+
+    # logging.info(f'DB: {db_final}, CBR: {cbr_final}')
 
     ############################################################################################################################################################
     ## Return Data
