@@ -8,6 +8,7 @@ import logging
 from get_URL_features import extract_links,extract_features
 import pandas as pd
 from get_scores import get_average_similarity, get_result_from_database  # database score and CBR
+from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
 CORS(app)
@@ -88,66 +89,140 @@ def analyze_email():
     logging.info(f'Contain links: {links}')
     
     ############################################################################################################################################################
-    ## Link Prediction
+    ## Link Prediction (old version)
     ############################################################################################################################################################
     
     predictions_url = []
     # Process URL predictions if there are links
-    if links:
-        for url in links:
+    # if links:
+    #     for url in links:
 
 
-            db_results = get_result_from_database(url)  
+    #         db_results = get_result_from_database(url)  
 
-            #Get the similarity score using CBR
-            cbr_score = get_average_similarity(url) 
+    #         #Get the similarity score using CBR
+    #         cbr_score = get_average_similarity(url) 
 
-            if db_results is not None:
-                if db_results == 1 :
-                    # If any database score is phishing, return phishing and stop further checks
-                    predictions_url.append({
-                        'url': url,
-                        'prediction_label': "Spam",
-                        'accuracy_model': "100.00%",  # Database result is conclusive
-                        'spam_rate': 1.0,
-                        'db_score': 1,
-                        'cbr': cbr_score
-                    })
-                    continue
-                elif db_results == 0:
-                    # If any database score is benign, return safe and stop further checks
-                    predictions_url.append({
-                        'url': url,
-                        'prediction_label': "Not Spam",
-                        'accuracy_model': "100.00%",  # Database result is conclusive
-                        'spam_rate': 0.0,
-                        'db_score': 0,
-                        'cbr': cbr_score
-                    })
-                    continue
+    #         if db_results is not None:
+    #             if db_results == 1 :
+    #                 # If any database score is phishing, return phishing and stop further checks
+    #                 predictions_url.append({
+    #                     'url': url,
+    #                     'prediction_label': "Spam",
+    #                     'accuracy_model': "100.00%",  # Database result is conclusive
+    #                     'spam_rate': 1.0,
+    #                     'db_score': 1,
+    #                     'cbr': cbr_score
+    #                 })
+    #                 continue
+    #             elif db_results == 0:
+    #                 # If any database score is benign, return safe and stop further checks
+    #                 predictions_url.append({
+    #                     'url': url,
+    #                     'prediction_label': "Not Spam",
+    #                     'accuracy_model': "100.00%",  # Database result is conclusive
+    #                     'spam_rate': 0.0,
+    #                     'db_score': 0,
+    #                     'cbr': cbr_score
+    #                 })
+    #                 continue
 
-            else:
+    #         else:
             
 
 
 
 
-                features = extract_features(url)
-                features_df = pd.DataFrame([features])
-                X_scaled_url = scaler_url.transform(features_df)
-                prediction_proba_model_url = model_url.predict_proba(X_scaled_url)[0]
-                accuracy_model_url = prediction_proba_model_url[1]
-                prediction_label_url = "Spam" if accuracy_model_url > 0.5 else "Not Spam"
-                predictions_url.append({
-                    'url': url,
-                    'prediction_label': prediction_label_url,
-                    'accuracy_model': f"{max(prediction_proba_model_url[0], prediction_proba_model_url[1]) * 100:.2f}%",
-                    'spam_rate': accuracy_model_url,
-                    'db_score':db_results,
-                    'cbr': cbr_score
-                })
+    #             features = extract_features(url)
+    #             features_df = pd.DataFrame([features])
+    #             X_scaled_url = scaler_url.transform(features_df)
+    #             prediction_proba_model_url = model_url.predict_proba(X_scaled_url)[0]
+    #             accuracy_model_url = prediction_proba_model_url[1]
+    #             prediction_label_url = "Spam" if accuracy_model_url > 0.5 else "Not Spam"
+    #             predictions_url.append({
+    #                 'url': url,
+    #                 'prediction_label': prediction_label_url,
+    #                 'accuracy_model': f"{max(prediction_proba_model_url[0], prediction_proba_model_url[1]) * 100:.2f}%",
+    #                 'spam_rate': accuracy_model_url,
+    #                 'db_score':db_results,
+    #                 'cbr': cbr_score
+    #             })
 
     # logging.info(f'PD: {predictions_url}')
+
+
+    ############################################################################################################################################################
+    ## Parallel running for link prediction 
+    ############################################################################################################################################################
+    
+    #define three functions for url analysis
+    def get_db_score(url):
+        
+        return get_result_from_database(url)
+    
+    def get_cbr_score(url):
+       
+        return get_average_similarity(url)
+
+    def get_url_prediction(url):
+        
+        features = extract_features(url)
+        features_df = pd.DataFrame([features])
+        X_scaled_url = scaler_url.transform(features_df)
+        prediction_proba_model_url = model_url.predict_proba(X_scaled_url)[0]
+        accuracy_model_url = prediction_proba_model_url[1]
+        prediction_label_url = "Spam" if accuracy_model_url > 0.5 else "Not Spam"
+        return {
+            'prediction_label': prediction_label_url,
+            'accuracy_model': f"{max(prediction_proba_model_url[0], prediction_proba_model_url[1]) * 100:.2f}%",
+            'spam_rate': accuracy_model_url
+        }
+    
+    def process_url_parallel(url):
+        #run code parallel
+        with ThreadPoolExecutor() as executor:
+            db_future = executor.submit(get_db_score, url)
+            cbr_future = executor.submit(get_cbr_score, url)
+            url_prediction_future = executor.submit(get_url_prediction, url)
+            
+            db_results = db_future.result()
+            cbr_score = cbr_future.result()
+            url_prediction = url_prediction_future.result()
+
+        # Combine results based on priority
+        if db_results is not None:
+            if db_results == 1:
+                return {
+                    'url': url,
+                    'prediction_label': "Spam",
+                    'accuracy_model': "100.00%",
+                    'spam_rate': 1.0,
+                    'db_score': 1,
+                    'cbr': cbr_score
+                }
+            elif db_results == 0:
+                return {
+                    'url': url,
+                    'prediction_label': "Not Spam",
+                    'accuracy_model': "100.00%",
+                    'spam_rate': 0.0,
+                    'db_score': 0,
+                    'cbr': cbr_score
+                }
+
+        # Fallback to model prediction if no db_results
+        return {
+            'url': url,
+            'prediction_label': url_prediction['prediction_label'],
+            'accuracy_model': url_prediction['accuracy_model'],
+            'spam_rate': url_prediction['spam_rate'],
+            'db_score': db_results,
+            'cbr': cbr_score
+        }
+    
+    if links:
+        with ThreadPoolExecutor() as executor:
+            predictions_url = list(executor.map(process_url_parallel, links))
 
     ############################################################################################################################################################
     ## Content Prediction
