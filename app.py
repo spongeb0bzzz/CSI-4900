@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 import joblib
 from preprocessing import preprocessing_content
 from flask_cors import CORS
@@ -9,6 +9,8 @@ from get_URL_features import extract_links,extract_features
 import pandas as pd
 from get_scores import get_average_similarity, get_result_from_database  # database score and CBR
 from concurrent.futures import ThreadPoolExecutor
+from lime.lime_text import LimeTextExplainer
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -235,6 +237,41 @@ def analyze_email():
     prediction_label = "Spam" if accuracy_model > 0.5 else "Not Spam"
 
     ############################################################################################################################################################
+    ## LIME 
+    ############################################################################################################################################################
+
+    def predict_proba_with_reshape(X):
+    
+
+        # Ensure X is a list of strings (raw email content)
+        if isinstance(X, np.ndarray) or isinstance(X, list):
+            # Convert raw email content into numerical features using vectorizer
+            X = vectorizer.transform(X)  # Outputs a sparse matrix
+
+        # Convert sparse matrix to dense if necessary
+        if not isinstance(X, np.ndarray):
+            X = X.toarray()  # Ensure compatibility with scaler and model
+
+        # Reshape if input is 1D
+        if len(X.shape) == 1:
+            X = X.reshape(1, -1)
+
+        # Scale the data (if scaler is used)
+        X = scaler.transform(X)
+
+        # Return prediction probabilities
+        return model.predict_proba(X)
+    
+    explainer = LimeTextExplainer(class_names=["Not Spam", "Spam"])
+    explanation = explainer.explain_instance(
+        email_body,  # Raw email text
+        predict_proba_with_reshape,  # Prediction function
+        num_features=10  # Number of features to highlight
+    )
+    explanation_file = "lime_explanation.html"
+    explanation.save_to_file(explanation_file)
+
+    ############################################################################################################################################################
     ## Combine Result 
     ############################################################################################################################################################
 
@@ -300,10 +337,15 @@ def analyze_email():
         "Prediction": prediction_label,
         "links": predictions_url,
         "output": f"{final_accuracy * 100:.2f}%",
-        "OutputLabel": final_label
+        "OutputLabel": final_label,
+        "LIME_Explanation_URL": f"http://127.0.0.1:5000/lime_explanation"
     }
     logging.info(f'Response Data: {response_data}')
     return jsonify(response_data)
+
+@app.route('/lime_explanation', methods=['GET'])
+def lime_explanation():
+    return send_file("lime_explanation.html", mimetype="text/html")
 
 if __name__ == '__main__':
     app.run(debug=True)
