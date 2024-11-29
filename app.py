@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-from flask import Flask, request, jsonify
-=======
 from flask import Flask, request, jsonify, send_file
->>>>>>> 54ceb3c3bf8c321c8df08a19a29176b4e31fb172
 import joblib
 from preprocessing import preprocessing_content
 from flask_cors import CORS
@@ -13,11 +9,8 @@ from get_URL_features import extract_links,extract_features
 import pandas as pd
 from get_scores import get_average_similarity, get_result_from_database  # database score and CBR
 from concurrent.futures import ThreadPoolExecutor
-<<<<<<< HEAD
-=======
 from lime.lime_text import LimeTextExplainer
 import os
->>>>>>> 54ceb3c3bf8c321c8df08a19a29176b4e31fb172
 
 app = Flask(__name__)
 CORS(app)
@@ -244,8 +237,6 @@ def analyze_email():
     prediction_label = "Spam" if accuracy_model > 0.5 else "Not Spam"
 
     ############################################################################################################################################################
-<<<<<<< HEAD
-=======
     ## LIME 
     ############################################################################################################################################################
 
@@ -281,7 +272,6 @@ def analyze_email():
     explanation.save_to_file(explanation_file)
 
     ############################################################################################################################################################
->>>>>>> 54ceb3c3bf8c321c8df08a19a29176b4e31fb172
     ## Combine Result 
     ############################################################################################################################################################
 
@@ -347,22 +337,15 @@ def analyze_email():
         "Prediction": prediction_label,
         "links": predictions_url,
         "output": f"{final_accuracy * 100:.2f}%",
-<<<<<<< HEAD
-        "OutputLabel": final_label
-=======
         "OutputLabel": final_label,
         "LIME_Explanation_URL": f"http://127.0.0.1:5000/lime_explanation"
->>>>>>> 54ceb3c3bf8c321c8df08a19a29176b4e31fb172
     }
     logging.info(f'Response Data: {response_data}')
     return jsonify(response_data)
 
-<<<<<<< HEAD
-=======
 @app.route('/lime_explanation', methods=['GET'])
 def lime_explanation():
     return send_file("lime_explanation.html", mimetype="text/html")
 
->>>>>>> 54ceb3c3bf8c321c8df08a19a29176b4e31fb172
 if __name__ == '__main__':
     app.run(debug=True)

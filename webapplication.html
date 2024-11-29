@@ -75,8 +75,6 @@
             margin-bottom: 5px;
             word-wrap: break-word;
         }
-<<<<<<< HEAD
-=======
         .lime-section {
             margin-top: 20px;
             padding: 10px;
@@ -86,7 +84,6 @@
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
 }
 
->>>>>>> 54ceb3c3bf8c321c8df08a19a29176b4e31fb172
     </style>
 </head>
 <body>
@@ -117,13 +114,10 @@
         <h3>Final output</h3>
         <div id="final-output"></div>
     </div>
-<<<<<<< HEAD
-=======
     <div class="lime-section">
         <h3>LIME Explanation</h3>
         <iframe id="limeFrame" src="" width="100%" height="400px" style="border: none;"></iframe>
     </div>
->>>>>>> 54ceb3c3bf8c321c8df08a19a29176b4e31fb172
 </div>
 
 
@@ -137,10 +131,7 @@
         document.getElementById("result").innerText = "Analyzing...";
         document.getElementById("linksList").innerHTML = ""; 
         document.getElementById("final-output").innerHTML = "";
-<<<<<<< HEAD
-=======
         document.getElementById("limeFrame").src = ""; // Reset LIME explanation
->>>>>>> 54ceb3c3bf8c321c8df08a19a29176b4e31fb172
 
         if (emailFile) {
         // Use FormData to send the file as 'multipart/form-data'
@@ -177,12 +168,9 @@
 
             document.getElementById("final-output").innerText = 
             `Result: ${result.OutputLabel}, Accuracy: ${result.output}`;
-<<<<<<< HEAD
-=======
             if (result.LIME_Explanation_URL) {
                 document.getElementById("limeFrame").src = result.LIME_Explanation_URL;
             }
->>>>>>> 54ceb3c3bf8c321c8df08a19a29176b4e31fb172
         } catch (error) {
             console.error('Error:', error);
             document.getElementById("result").innerText = 'Error occurred while analyzing the email';
@@ -224,13 +212,10 @@
             
             document.getElementById("final-output").innerText = 
                 `Result: ${result.OutputLabel}, Accuracy: ${result.output}`;
-<<<<<<< HEAD
-=======
             
             if (result.LIME_Explanation_URL) {
                 document.getElementById("limeFrame").src = result.LIME_Explanation_URL;
             }
->>>>>>> 54ceb3c3bf8c321c8df08a19a29176b4e31fb172
         } catch (error) {
             console.error('Error:', error);
             document.getElementById("result").innerText = 'Error occurred while analyzing the email';
