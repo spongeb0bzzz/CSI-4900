@@ -82,7 +82,21 @@
             border: 1px solid #ccc;
             border-radius: 5px;
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-}
+        }
+        .lime-section button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .lime-section button:hover {
+            background-color: #45a049;
+        }
 
     </style>
 </head>
@@ -115,8 +129,10 @@
         <div id="final-output"></div>
     </div>
     <div class="lime-section">
-        <h3>LIME Explanation</h3>
-        <iframe id="limeFrame" src="" width="100%" height="400px" style="border: none;"></iframe>
+        <h3>Explanation Visualization</h3>
+        <button onclick="showLIME()">LIME</button>
+        <button onclick="showSHAP()">Similar Links</button>
+        <iframe id="explanationFrame" src="" width="100%" height="400px" style="border: none;"></iframe>
     </div>
 </div>
 
@@ -131,7 +147,7 @@
         document.getElementById("result").innerText = "Analyzing...";
         document.getElementById("linksList").innerHTML = ""; 
         document.getElementById("final-output").innerHTML = "";
-        document.getElementById("limeFrame").src = ""; // Reset LIME explanation
+        document.getElementById("explanationFrame").src = ""; // Reset LIME explanation
 
         if (emailFile) {
         // Use FormData to send the file as 'multipart/form-data'
@@ -168,9 +184,11 @@
 
             document.getElementById("final-output").innerText = 
             `Result: ${result.OutputLabel}, Accuracy: ${result.output}`;
-            if (result.LIME_Explanation_URL) {
-                document.getElementById("limeFrame").src = result.LIME_Explanation_URL;
-            }
+
+            window.limeURL = result.LIME_Explanation_URL;
+            window.shapURL = result.SHAP_Explanation_URL;
+            
+            document.getElementById("explanationFrame").src = window.limeURL;
         } catch (error) {
             console.error('Error:', error);
             document.getElementById("result").innerText = 'Error occurred while analyzing the email';
@@ -213,9 +231,12 @@
             document.getElementById("final-output").innerText = 
                 `Result: ${result.OutputLabel}, Accuracy: ${result.output}`;
             
-            if (result.LIME_Explanation_URL) {
-                document.getElementById("limeFrame").src = result.LIME_Explanation_URL;
-            }
+            // Save URLs for LIME and SHAP explanations
+            window.limeURL = result.LIME_Explanation_URL;
+            window.shapURL = result.SHAP_Explanation_URL;
+
+            // Default to show LIME
+            document.getElementById("explanationFrame").src = window.limeURL;
         } catch (error) {
             console.error('Error:', error);
             document.getElementById("result").innerText = 'Error occurred while analyzing the email';
@@ -264,6 +285,14 @@
             console.error('Error:', error);
             document.getElementById("result").innerText = 'Error occurred while analyzing the email';
         }
+    }
+
+    function showLIME() {
+        document.getElementById("explanationFrame").src = window.limeURL || "";
+}
+
+    function showSHAP() {
+        document.getElementById("explanationFrame").src = window.shapURL || "";
     }
 </script>
 </body>

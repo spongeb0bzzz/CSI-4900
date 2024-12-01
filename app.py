@@ -7,10 +7,12 @@ from eml_feature import extract_eml,extract_eml_body
 import logging
 from get_URL_features import extract_links,extract_features
 import pandas as pd
-from get_scores import get_average_similarity, get_result_from_database  # database score and CBR
+from get_scores import get_average_similarity, get_result_from_database,query_link_similarity  # database score and CBR
 from concurrent.futures import ThreadPoolExecutor
 from lime.lime_text import LimeTextExplainer
 import os
+import shap
+import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 CORS(app)
@@ -179,17 +181,82 @@ def analyze_email():
             'accuracy_model': f"{max(prediction_proba_model_url[0], prediction_proba_model_url[1]) * 100:.2f}%",
             'spam_rate': accuracy_model_url
         }
-    
+    def get_similar_links(url, top_k=3):
+        """
+        Retrieve similar links for a given URL.
+        """
+        return query_link_similarity(url, top_k=top_k)
+    def generate_similar_links_html(predictions):
+        """
+        Generate an HTML file with a table of similar links for all URLs.
+        """
+        html_file_path = "shap_explanation.html"
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Similar Links Analysis</title>
+            <style>
+                table {{
+                    border-collapse: collapse;
+                    width: 100%;
+                }}
+                th, td {{
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                }}
+                th {{
+                    background-color: #f2f2f2;
+                    text-align: left;
+                }}
+                tr:hover {{background-color: #f5f5f5;}}
+            </style>
+        </head>
+        <body>
+            <h1>Similar Links Analysis</h1>
+            <table>
+                <tr>
+                    <th>Original Link</th>
+                    <th>Accuracy</th>
+                    <th>Status</th>
+                </tr>
+        """
+        for prediction in predictions:
+            original_link = prediction['url']
+            similar_links = prediction.get('similar_links', [])
+            for similar in similar_links:
+                similarity_percentage = f"{similar['similarity_score'] * 100:.2f}%"
+                html_content += f"""
+                    <tr>
+                        <td>{original_link}</td>
+                        <td>{similarity_percentage}</td>
+                        
+                        <td>{"Phishing" if similar['status'] == 1 else "Benign"}</td>
+                    </tr>
+                """
+
+        html_content += """
+            </table>
+        </body>
+        </html>
+        """
+
+        with open(html_file_path, "w", encoding="utf-8") as html_file:
+            html_file.write(html_content)
+
+
     def process_url_parallel(url):
         #run code parallel
         with ThreadPoolExecutor() as executor:
             db_future = executor.submit(get_db_score, url)
             cbr_future = executor.submit(get_cbr_score, url)
             url_prediction_future = executor.submit(get_url_prediction, url)
+            similar_links_future = executor.submit(get_similar_links, url, top_k=3)
             
             db_results = db_future.result()
             cbr_score = cbr_future.result()
             url_prediction = url_prediction_future.result()
+            similar_links = similar_links_future.result()
 
         # Combine results based on priority
         if db_results is not None:
@@ -200,7 +267,8 @@ def analyze_email():
                     'accuracy_model': "100.00%",
                     'spam_rate': 1.0,
                     'db_score': 1,
-                    'cbr': cbr_score
+                    'cbr': cbr_score,
+                    'similar_links': similar_links
                 }
             elif db_results == 0:
                 return {
@@ -209,7 +277,8 @@ def analyze_email():
                     'accuracy_model': "100.00%",
                     'spam_rate': 0.0,
                     'db_score': 0,
-                    'cbr': cbr_score
+                    'cbr': cbr_score,
+                    'similar_links': similar_links
                 }
 
         # Fallback to model prediction if no db_results
@@ -219,12 +288,15 @@ def analyze_email():
             'accuracy_model': url_prediction['accuracy_model'],
             'spam_rate': url_prediction['spam_rate'],
             'db_score': db_results,
-            'cbr': cbr_score
+            'cbr': cbr_score,
+            'similar_links': similar_links
         }
     
     if links:
         with ThreadPoolExecutor() as executor:
             predictions_url = list(executor.map(process_url_parallel, links))
+        
+        generate_similar_links_html(predictions_url)
 
     ############################################################################################################################################################
     ## Content Prediction
@@ -270,7 +342,105 @@ def analyze_email():
     )
     explanation_file = "lime_explanation.html"
     explanation.save_to_file(explanation_file)
+    ############################################################################################################################################################
+    ## SHAP
+    ############################################################################################################################################################
 
+#######################################################################################################################################################################
+#     # Function to tokenize and vectorize the email
+#     def tokenize_and_vectorize(email_body):
+#         """
+#         Tokenizes the email and maps the SHAP values to the corresponding words.
+#         """
+#         # Vectorize the email body
+#         X_vectorized = vectorizer.transform([email_body])
+#         feature_names = vectorizer.get_feature_names_out()  # Get feature names (words/tokens)
+
+#         # Convert the sparse matrix to dense
+#         X_dense = X_vectorized.toarray()
+
+#         return X_dense, feature_names
+
+#     # SHAP-compatible prediction function
+#     def predict_proba_for_shap(scaled_features):
+#         """
+#         Model prediction function for SHAP using scaled features.
+#         """
+#         return model.predict_proba(scaled_features)
+
+    
+
+#     # Step 1: Vectorize and scale the email
+#     X_dense, feature_names = tokenize_and_vectorize(email_body)
+#     X_scaled = scaler.transform(X_dense)
+
+#     # Step 2: Initialize SHAP KernelExplainer
+#     reference_data = np.zeros_like(X_scaled)  # Use a baseline of zeros
+#     explainer = shap.KernelExplainer(predict_proba_for_shap, reference_data)
+
+#     # Step 3: Compute SHAP values
+#     shap_values = explainer.shap_values(X_scaled)
+#     shap_values_class_1 = shap_values[0][:, 1]
+
+#     # Step 4: Map SHAP values to tokens
+#     tokens = email_body.split()  # Tokenize the email body
+#     token_shap_values = []
+
+#     logging.info(shap_values)
+#     logging.info(shap_values.shape)
+#     # Match tokens to SHAP values from vectorizer
+#     for token in tokens:
+#         if token in feature_names:
+#             idx = list(feature_names).index(token)  # Find index of the token in feature names
+#             token_shap_values.append(shap_values_class_1[idx])  # Append SHAP value for class 1 (Spam)
+#         else:
+#             token_shap_values.append(0)  # If token not in vectorizer, assign 0 SHAP value
+            
+#     # Convert token SHAP values to NumPy array
+#     token_shap_values = np.array(token_shap_values)
+
+#     # Step 5: Generate SHAP Explanation with Tokens
+#     shap_explanation = shap.Explanation(
+#         values=token_shap_values,  # SHAP values for tokens
+#         data=tokens,               # Actual tokens from the email
+#         base_values=explainer.expected_value[1]  # Baseline for Spam class
+#     )
+#     logging.info(feature_names)
+#     # Step 6: Visualize and Save SHAP Explanation
+    
+
+# # Save the plot as an image
+#     waterfall_plot_path=shap.waterfall_plot(shap_explanation)
+#     plt.savefig(waterfall_plot_path, bbox_inches="tight")
+#     plt.close()
+
+    
+
+#     # Step 5: Embed the Plot into an HTML File
+#     html_file_path = "shap_explanation.html"
+#     with open(html_file_path, "w", encoding="utf-8") as html_file:
+#         html_file.write(f"""
+#         <!DOCTYPE html>
+#         <html>
+#         <head>
+#             <title>SHAP Waterfall Plot</title>
+#         </head>
+#         <body>
+#             <h1>SHAP Waterfall Plot</h1>
+#             <img src="{waterfall_plot_path}" alt="SHAP Waterfall Plot" style="width:80%;height:auto;">
+#         </body>
+#         </html>
+#         """)
+
+
+
+# # Save the force plot to an HTML file
+#     shap.save_html("shap_explanation.html", force_plot)
+
+
+
+    
+    
     ############################################################################################################################################################
     ## Combine Result 
     ############################################################################################################################################################
@@ -338,7 +508,8 @@ def analyze_email():
         "links": predictions_url,
         "output": f"{final_accuracy * 100:.2f}%",
         "OutputLabel": final_label,
-        "LIME_Explanation_URL": f"http://127.0.0.1:5000/lime_explanation"
+        "LIME_Explanation_URL": f"http://127.0.0.1:5000/lime_explanation",
+        "SHAP_Explanation_URL": f"http://127.0.0.1:5000/shap_explanation"
     }
     logging.info(f'Response Data: {response_data}')
     return jsonify(response_data)
@@ -346,6 +517,10 @@ def analyze_email():
 @app.route('/lime_explanation', methods=['GET'])
 def lime_explanation():
     return send_file("lime_explanation.html", mimetype="text/html")
+
+@app.route('/shap_explanation', methods=['GET'])
+def shap_explanation():
+    return send_file("shap_explanation.html", mimetype="text/html")
 
 if __name__ == '__main__':
     app.run(debug=True)

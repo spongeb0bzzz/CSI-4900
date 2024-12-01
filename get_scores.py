@@ -227,6 +227,8 @@ def query_link_similarity(query_link, top_k=1):
     return results
 
 
+
+
 def get_average_similarity(link):
     output =  query_link_similarity(link, top_k= 3)
 
@@ -265,12 +267,15 @@ for result in results:
 '''
 
 
-# test = "http://www.jp519.com/"
+# test = "http://e2qx0eun4dbzfe8d.sslsecure.eu.com/4yZfFs6128cfzp243vcbaeqcsqa983YFBYAGTVGRXYCDU74803/6487X9?WW3Z3PF2ZT7PIXXSGPNTRMQ100GL="
 
-# # # # result = query_link_similarity(test, top_k= 3)
-# # result = get_average_similarity(test)
+# result = query_link_similarity(test, top_k= 3)
 
-# # print(result)
+# for item in result:
+#     print(f"Similarity Score: {item['similarity_score'] * 100:.2f}%")
+# # # result = get_average_similarity(test)
+
+# print(result)
 
 # result2 = get_result_from_database(test)
 
