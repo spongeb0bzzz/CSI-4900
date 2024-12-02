@@ -8,11 +8,13 @@ import logging
 from get_URL_features import extract_links,extract_features
 import pandas as pd
 from get_scores import get_average_similarity, get_result_from_database,query_link_similarity  # database score and CBR
+from file_analysis import  predict_malicious,analyze_file_predictions
 from concurrent.futures import ThreadPoolExecutor
 from lime.lime_text import LimeTextExplainer
 import os
 import shap
 import matplotlib.pyplot as plt
+from io import BufferedReader, BytesIO
 
 app = Flask(__name__)
 CORS(app)
@@ -23,6 +25,7 @@ try:
     scaler = joblib.load('model/new email models/scaler_model.joblib')
     model_url = joblib.load('model/models url/stacking_model(2).joblib')
     scaler_url = joblib.load('model/models url/scaler(2).joblib')
+
     print("Loaded models using first path.")
 except FileNotFoundError:
     # Attempt to load models with the second path
@@ -32,6 +35,7 @@ except FileNotFoundError:
         scaler = joblib.load('CSI-4900\\model\\new email models\\scaler_model.joblib')
         model_url = joblib.load('CSI-4900\\model\\models url\\stacking_model(2).joblib')
         scaler_url = joblib.load('CSI-4900\\model\\models url\\scaler(2).joblib')
+
         print("Loaded models using second path.")
     except FileNotFoundError:
         print("Error: Unable to load models from either path.")
@@ -53,6 +57,7 @@ def analyze_email():
     # Check if a file is included in the request
     if 'eml_file' in request.files:
         logging.info(f'Working with eml file')
+        file_flag = 1
         file = request.files['eml_file']
         if file.filename == '':
             return jsonify({"error": "No file selected"}), 400
@@ -75,6 +80,7 @@ def analyze_email():
 
     else:
         # Get the email content from JSON
+        file_flag = 0 
         email_content = request.json.get("email_content", "").strip()
         if not email_content:
             return jsonify({"error": "No email content provided"}), 400
@@ -83,6 +89,22 @@ def analyze_email():
 
     if not email_body:
         return jsonify({"error": "Email body is empty after processing"}), 400
+    
+    ############################################################################################################################################################
+    ## File analysis
+    ############################################################################################################################################################
+    file.seek(0)
+    file_bytes_io = BytesIO(file.read())
+    
+    # Convert BytesIO to BufferedReader
+    file_buffered_reader = BufferedReader(file_bytes_io)
+    file_analysis_result = []
+    logging.info(f'file: {file_buffered_reader}')
+    if file_flag == 1:
+        file_analysis_result = predict_malicious(file_buffered_reader)
+
+    logging.info(f'file analysis: {file_analysis_result}')
+        
 
     ############################################################################################################################################################
     ## GET THE LINKS From Email body
@@ -470,29 +492,60 @@ def analyze_email():
             average_cbr_list = sum(cbr_final) / len(cbr_final) if cbr_final else 0
             average_accuracy_list = sum(accuracies) / len(accuracies) if accuracies else 0
 
+            if file_flag == 1 and len(file_analysis_result) >0:
+                # Extract confidence scores and calculate the average
+                file_confidences = analyze_file_predictions(file_analysis_result)
+            
+
             # Final score calculation based on the presence of db scores
             if average_db_list is not None:
-                final_output = (
-                    0.6 * average_accuracy_list +
-                    0.2 * accuracy_model +
-                    0.1 * average_cbr_list +
-                    0.1 * average_db_list
-                )
+                if file_flag ==1 and len(file_analysis_result) >0:
+                    final_output = (
+                        0.3 * average_accuracy_list +
+                        0.2 * accuracy_model +
+                        0.1 * average_cbr_list +
+                        0.1 * average_db_list +
+                        0.3 * file_confidences
+                    )
+                else:
+                    final_output = (
+                        0.6 * average_accuracy_list +
+                        0.2 * accuracy_model +
+                        0.1 * average_cbr_list +
+                        0.1 * average_db_list
+                    )
             else:
                 # Adjust formula if db scores are missing
-                final_output = (
-                    0.7 * average_accuracy_list +
-                    0.2 * accuracy_model +
-                    0.1 * average_cbr_list
-                )
+                if file_flag ==1 and len(file_analysis_result) >0:
+                    final_output = (
+                        0.4 * average_accuracy_list +
+                        0.2 * accuracy_model +
+                        0.1 * average_cbr_list +
+                        0.3 * file_confidences
+                    )
+                else:
+                    final_output = (
+                        0.7 * average_accuracy_list +
+                        0.2 * accuracy_model +
+                        0.1 * average_cbr_list 
+                        
+                    )
 
             # Determine final label and accuracy
             final_label = "Spam" if final_output > 0.5 else "Not Spam"
             final_accuracy = final_output if final_label == 'Spam' else 1 - final_output
     else:
         # Fallback if predictions_url is empty
-        final_label = "Spam" if accuracy_model > 0.5 else "Not Spam"
-        final_accuracy = accuracy_model if final_label == 'Spam' else 1 - accuracy_model
+        if file_flag == 1 and len(file_analysis_result) >0:
+                # Extract confidence scores and calculate the average
+                file_confidences = analyze_file_predictions(file_analysis_result)
+
+                final_label = "Spam" if (0.1*accuracy_model+0.9* file_confidences) > 0.5 else "Not Spam"
+                final_accuracy = 0.1*accuracy_model+0.9* file_confidences if final_label == 'Spam' else 1 - (0.1*accuracy_model+0.9* file_confidences)
+        else:
+            final_label = "Spam" if accuracy_model > 0.5 else "Not Spam"
+            final_accuracy = accuracy_model if final_label == 'Spam' else 1 - accuracy_model
+
 
 
 
@@ -509,7 +562,8 @@ def analyze_email():
         "output": f"{final_accuracy * 100:.2f}%",
         "OutputLabel": final_label,
         "LIME_Explanation_URL": f"http://127.0.0.1:5000/lime_explanation",
-        "SHAP_Explanation_URL": f"http://127.0.0.1:5000/shap_explanation"
+        "SHAP_Explanation_URL": f"http://127.0.0.1:5000/shap_explanation",
+        "file_analysis": file_analysis_result
     }
     logging.info(f'Response Data: {response_data}')
     return jsonify(response_data)

@@ -116,10 +116,10 @@ def process_file(file_content):
             "Error": str(e)
         }
 
-def extract_features_from_eml(eml_file_path):
+def extract_features_from_eml(eml_file):
     """Extract features from all the PDF files in an EML file."""
-    with open(eml_file_path, 'rb') as eml_file:
-        msg = BytesParser(policy=policy.default).parse(eml_file)
+    
+    msg = BytesParser(policy=policy.default).parse(eml_file)
 
     results = []
     
@@ -148,15 +148,15 @@ def extract_features_from_eml(eml_file_path):
 
     return results
 
-'''
-#################################################
-## Example usage (get features from eml file)
-#################################################
+    # '''
+    # #################################################
+    # ## Example usage (get features from eml file)
+    # #################################################
 
-eml_file_path = r'C:\Users\Nassim\Downloads\phishing_pot\pdf_emls\sample-638.eml'  # Path to your EML file
-features = extract_features_from_eml(eml_file_path)
+    # eml_file_path = r'C:\Users\Nassim\Downloads\phishing_pot\pdf_emls\sample-638.eml'  # Path to your EML file
+    # features = extract_features_from_eml(eml_file_path)
 
-'''
+    # '''
 
 #################################################
 ## Get result
@@ -165,7 +165,7 @@ features = extract_features_from_eml(eml_file_path)
 import joblib
 import numpy as np
 
-def predict_malicious(eml_file_path, model_path, scaler_path):
+def predict_malicious(eml_file_path):
     """
     Predict if the given .eml file is malicious or benign based on its features.
 
@@ -181,8 +181,8 @@ def predict_malicious(eml_file_path, model_path, scaler_path):
     features = extract_features_from_eml(eml_file_path)
 
     # Load the model and scaler
-    model = joblib.load(model_path)
-    scaler = joblib.load(scaler_path)
+    # model = joblib.load(model_path)
+    # scaler = joblib.load(scaler_path)
 
     predictions = []
 
@@ -210,26 +210,82 @@ def predict_malicious(eml_file_path, model_path, scaler_path):
         # Append result to the predictions list
         predictions.append({
             "FileName": feature_dict['FileName'],
-            "Prediction": prediction[0],
-            "ConfidenceScore": predicted_confidence
+            "Prediction": int(prediction[0]),
+            "ConfidenceScore": float(predicted_confidence)
         })
 
     return predictions
 
-'''
-#################################################
-## Example of result
-#################################################
 
-eml_file_path = r'C:\Users\Nassim\Downloads\benign5.eml'
-model_path = r"C:\Users\Nassim\OneDrive\Documents\University\Session 9\CSI 4900\Notebooks\file joblib\stacking_model.joblib"
-scaler_path = r"C:\Users\Nassim\OneDrive\Documents\University\Session 9\CSI 4900\Notebooks\file joblib\scaler.joblib"
+def analyze_file_predictions(predictions):
+    """
+    Calculate the average confidence score and determine the overall status.
 
-results = predict_malicious(eml_file_path, model_path, scaler_path)
+    Parameters:
+    - predictions: list of dictionaries, where each dictionary contains:
+        - 'FileName': str, name of the file
+        - 'Prediction': int, 0 (benign) or 1 (malicious)
+        - 'ConfidenceScore': float, confidence score for the prediction
 
-for result in results: # Print the results from all PDF files in the EML file
-    print(f"File: {result['FileName']}")
-    print(f"Prediction: {result['Prediction']}")
-    print(f"Confidence Score: {result['ConfidenceScore']:.4f}")
+    Returns:
+    - result: dict containing:
+        - 'AverageConfidenceScore': float, average adjusted confidence score
+        - 'OverallStatus': int, 1 (malicious) if average confidence > 50, otherwise 0 (benign)
+    """
 
-'''
+
+    # Calculate adjusted confidence scores and sum them
+    total_score = 0
+    for item in predictions:
+        score = item['ConfidenceScore']
+        if item['Prediction'] == 0:
+            score = 1 - score  # Adjust score for benign predictions
+        total_score += score
+
+    # Calculate the average confidence score
+    average_score = total_score / len(predictions)
+
+    # Determine the overall status
+
+
+    return average_score
+
+
+    
+
+    
+
+
+    # '''
+    # #################################################
+    # ## Example of result
+    # #################################################
+
+    # eml_file_path = r'C:\Users\Nassim\Downloads\benign5.eml'
+    # model_path = r"C:\Users\Nassim\OneDrive\Documents\University\Session 9\CSI 4900\Notebooks\file joblib\stacking_model.joblib"
+    # scaler_path = r"C:\Users\Nassim\OneDrive\Documents\University\Session 9\CSI 4900\Notebooks\file joblib\scaler.joblib"
+
+    # results = predict_malicious(eml_file_path, model_path, scaler_path)
+
+    # for result in results: # Print the results from all PDF files in the EML file
+    #     print(f"File: {result['FileName']}")
+    #     print(f"Prediction: {result['Prediction']}")
+    #     print(f"Confidence Score: {result['ConfidenceScore']:.4f}")
+
+    # '''
+
+# eml_file_path = 'eml tests\malicious\sample-62.eml'
+
+
+# with open(eml_file_path, 'rb') as eml_file:
+#     results = predict_malicious(eml_file)
+# print(eml_file)
+# print(results)
+
+# for result in results: # Print the results from all PDF files in the EML file
+#     print(f"File: {result['FileName']}")
+#     print(f"Prediction: {result['Prediction']}")
+#     print(f"Confidence Score: {result['ConfidenceScore']:.4f}")
+
+# print(analyze_file_predictions(results))
+

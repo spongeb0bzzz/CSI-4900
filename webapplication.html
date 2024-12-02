@@ -98,6 +98,53 @@
             background-color: #45a049;
         }
 
+        /* File Analysis Section */
+        #fileAnalysis {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+
+        #fileAnalysis h4 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        #fileAnalysis .file-item {
+            margin-bottom: 8px;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #fileAnalysis .file-item:last-child {
+            border-bottom: none;
+        }
+
+        #fileAnalysis .file-item span {
+            font-weight: bold;
+            color: #4CAF50; /* Green for benign */
+        }
+
+        #fileAnalysis .file-item span.malicious {
+            color: #FF6347; /* Red for malicious */
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+            color: #333;
+            text-align: center;
+}
+
     </style>
 </head>
 <body>
@@ -116,6 +163,9 @@
     <button onclick="submitEmail()">Analyze</button>
     <h3>Content analysis</h3>
     <div id="result"></div>
+
+    <h3>File Analysis</h3>
+    <div id="fileAnalysis"></div>
 
     
 </div>
@@ -148,6 +198,7 @@
         document.getElementById("linksList").innerHTML = ""; 
         document.getElementById("final-output").innerHTML = "";
         document.getElementById("explanationFrame").src = ""; // Reset LIME explanation
+        document.getElementById("fileAnalysis").innerHTML = "";
 
         if (emailFile) {
         // Use FormData to send the file as 'multipart/form-data'
@@ -167,9 +218,22 @@
 
             const result = await response.json();
 
+            
+
             // Display the result correctly
             document.getElementById("result").innerText = 
                 `Result: ${result.Prediction}, Accuracy: ${result.Model_Accuracy}`;
+
+            // Display file analysis
+            if (result.file_analysis && result.file_analysis.length > 0) {
+                result.file_analysis.forEach(file => {
+                    const fileItem = document.createElement("div");
+                    fileItem.innerHTML = `File: ${file.FileName}, Result: ${file.Prediction === 0 ? "Benign" : "Malicious"}, Confidence: ${(file.ConfidenceScore * 100).toFixed(2)}%`;
+                    document.getElementById("fileAnalysis").appendChild(fileItem);
+                });
+            } else {
+                document.getElementById("fileAnalysis").innerText = "No files analyzed.";
+            }    
             // Display the links and accuracies in the links list
             if (result.links && result.links.length > 0) {
                     result.links.forEach(link => {
